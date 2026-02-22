@@ -10,12 +10,14 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function PersonnelDetailScreen({ route, navigation }) {
   const { person } = route.params;
+  const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
@@ -61,46 +63,46 @@ export default function PersonnelDetailScreen({ route, navigation }) {
         </LinearGradient>
 
         {/* Hizmetlerim */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <MaterialCommunityIcons name="content-cut" size={20} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Hizmetlerim</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Hizmetlerim</Text>
           </View>
           {person.services.map((service, index) => (
-            <View key={index} style={styles.serviceRow}>
+            <View key={index} style={[styles.serviceRow, { backgroundColor: colors.background }]}>
               <View style={styles.serviceDot} />
-              <Text style={styles.serviceText}>{service}</Text>
+              <Text style={[styles.serviceText, { color: colors.textPrimary }]}>{service}</Text>
               <Ionicons name="checkmark" size={22} color={COLORS.success} />
             </View>
           ))}
         </View>
 
         {/* Hakkımda */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="information-circle-outline" size={22} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Hakkımda</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Hakkımda</Text>
           </View>
-          <View style={styles.aboutContainer}>
-            <Text style={styles.aboutText}>{person.about}</Text>
+          <View style={[styles.aboutContainer, { backgroundColor: colors.background }]}>
+            <Text style={[styles.aboutText, { color: colors.textPrimary }]}>{person.about}</Text>
           </View>
         </View>
 
         {/* Çalışma Saatleri */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="time-outline" size={22} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Çalışma Saatleri</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Çalışma Saatleri</Text>
           </View>
-          <View style={styles.hoursContainer}>
+          <View style={[styles.hoursContainer, { backgroundColor: colors.background }]}>
             <View style={styles.hourInfoRow}>
-              <Text style={styles.hourLabel}>Çalışma Saatleri:</Text>
+              <Text style={[styles.hourLabel, { color: colors.textSecondary }]}>Çalışma Saatleri:</Text>
               <Text style={styles.hourValue}>{person.workingHours}</Text>
             </View>
             <View style={styles.hourInfoRow}>
@@ -114,7 +116,7 @@ export default function PersonnelDetailScreen({ route, navigation }) {
       </ScrollView>
 
       {/* Bottom Appointment Button */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         <TouchableOpacity activeOpacity={0.85} style={styles.appointmentButton}>
           <LinearGradient
             colors={['#1E6F5C', '#2D9B7B']}

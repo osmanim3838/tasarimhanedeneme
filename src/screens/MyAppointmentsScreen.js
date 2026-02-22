@@ -15,6 +15,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getUserAppointments, updateAppointmentStatus } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
 
 const MONTHS_TR = [
   'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
@@ -39,6 +40,7 @@ function formatDate(dateStr) {
 
 export default function MyAppointmentsScreen({ navigation }) {
   const { user } = useUser();
+  const { colors } = useTheme();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -100,11 +102,11 @@ export default function MyAppointmentsScreen({ navigation }) {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconBg}>
+      <View style={[styles.emptyIconBg, { backgroundColor: colors.menuIconBg1 }]}>
         <Ionicons name="calendar-outline" size={56} color={COLORS.primary} />
       </View>
-      <Text style={styles.emptyTitle}>Henüz randevunuz yok</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Henüz randevunuz yok</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         İlk randevunuzu oluşturmak için aşağıdaki butona tıklayın
       </Text>
       <TouchableOpacity
@@ -122,7 +124,7 @@ export default function MyAppointmentsScreen({ navigation }) {
   const renderAppointmentCard = (appointment, isPast) => {
     const status = getStatus(appointment.status);
     return (
-      <View key={appointment.id} style={[styles.card, isPast && { opacity: 0.65 }]}>
+      <View key={appointment.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, isPast && { opacity: 0.65 }]}>
         {/* Status badge */}
         <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
           <Ionicons name={status.icon} size={16} color={status.color} />
@@ -131,23 +133,23 @@ export default function MyAppointmentsScreen({ navigation }) {
 
         {/* Personnel */}
         <View style={styles.cardRow}>
-          <View style={[styles.cardIconBg, { backgroundColor: '#EDE9FE' }]}>
+          <View style={[styles.cardIconBg, { backgroundColor: colors.menuIconBg1 }]}>
             <Ionicons name="person" size={18} color={COLORS.primary} />
           </View>
           <View style={styles.cardRowContent}>
-            <Text style={styles.cardRowLabel}>Personel</Text>
-            <Text style={styles.cardRowValue}>{appointment.personnelName || '-'}</Text>
+            <Text style={[styles.cardRowLabel, { color: colors.textSecondary }]}>Personel</Text>
+            <Text style={[styles.cardRowValue, { color: colors.textPrimary }]}>{appointment.personnelName || '-'}</Text>
           </View>
         </View>
 
         {/* Services */}
         <View style={styles.cardRow}>
-          <View style={[styles.cardIconBg, { backgroundColor: '#FEF3C7' }]}>
+          <View style={[styles.cardIconBg, { backgroundColor: colors.menuIconBg2 }]}>
             <MaterialCommunityIcons name="content-cut" size={18} color={COLORS.warning} />
           </View>
           <View style={styles.cardRowContent}>
-            <Text style={styles.cardRowLabel}>Hizmetler</Text>
-            <Text style={styles.cardRowValue}>
+            <Text style={[styles.cardRowLabel, { color: colors.textSecondary }]}>Hizmetler</Text>
+            <Text style={[styles.cardRowValue, { color: colors.textPrimary }]}>
               {(appointment.services || []).join(', ') || '-'}
             </Text>
           </View>
@@ -155,12 +157,12 @@ export default function MyAppointmentsScreen({ navigation }) {
 
         {/* Date & Time */}
         <View style={styles.cardRow}>
-          <View style={[styles.cardIconBg, { backgroundColor: '#DBEAFE' }]}>
+          <View style={[styles.cardIconBg, { backgroundColor: colors.statusCompletedBg }]}>
             <Ionicons name="calendar" size={18} color={COLORS.info} />
           </View>
           <View style={styles.cardRowContent}>
-            <Text style={styles.cardRowLabel}>Tarih & Saat</Text>
-            <Text style={styles.cardRowValue}>
+            <Text style={[styles.cardRowLabel, { color: colors.textSecondary }]}>Tarih & Saat</Text>
+            <Text style={[styles.cardRowValue, { color: colors.textPrimary }]}>
               {formatDate(appointment.date)} — {appointment.time || ''}
             </Text>
           </View>
@@ -169,7 +171,7 @@ export default function MyAppointmentsScreen({ navigation }) {
         {/* Cancel Button */}
         {appointment.status === 'confirmed' && !isPast && (
           <TouchableOpacity
-            style={styles.cancelButton}
+            style={[styles.cancelButton, { backgroundColor: colors.deleteButtonBg }]}
             onPress={() => handleCancel(appointment)}
             activeOpacity={0.7}
           >
@@ -182,8 +184,7 @@ export default function MyAppointmentsScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient colors={COLORS.headerGradient} style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -222,13 +223,13 @@ export default function MyAppointmentsScreen({ navigation }) {
                   <>
                     {upcoming.length > 0 && (
                       <>
-                        <Text style={styles.sectionLabel}>Yaklaşan Randevular</Text>
+                        <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>Yaklaşan Randevular</Text>
                         {upcoming.map((a) => renderAppointmentCard(a, false))}
                       </>
                     )}
                     {past.length > 0 && (
                       <>
-                        <Text style={[styles.sectionLabel, { marginTop: upcoming.length > 0 ? 20 : 0 }]}>Geçmiş Randevular</Text>
+                        <Text style={[styles.sectionLabel, { marginTop: upcoming.length > 0 ? 20 : 0, color: colors.textPrimary }]}>Geçmiş Randevular</Text>
                         {past.map((a) => renderAppointmentCard(a, true))}
                       </>
                     )}

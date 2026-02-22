@@ -309,7 +309,8 @@ const styles = StyleSheet.create({
   },
   codeInputFilled: {
     borderColor: COLORS.primary,
-    backgroundColor: 'rgba(123, 97, 255, 0.08)',
+    backgroundColor: 'rgba(30, 41, 59, 0.85)',
+    color: '#FFFFFF',
   },
   timerContainer: {
     alignItems: 'center',

@@ -2,17 +2,30 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
 import { UserProvider } from './src/context/UserContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { seedDatabase } from './src/services/firebaseService';
 
-export default function App() {
+function AppContent() {
+  const { isDark } = useTheme();
+
   useEffect(() => {
     seedDatabase().catch(console.error);
   }, []);
 
   return (
-    <UserProvider>
-      <StatusBar style="light" />
+    <>
+      <StatusBar style={isDark ? 'light' : 'light'} />
       <AppNavigator />
-    </UserProvider>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <UserProvider>
+        <AppContent />
+      </UserProvider>
+    </ThemeProvider>
   );
 }

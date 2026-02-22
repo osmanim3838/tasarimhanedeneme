@@ -16,6 +16,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getPersonnel, createAppointment } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -92,6 +93,7 @@ function getCalendarDays(year, month) {
 
 export default function AppointmentScreen({ navigation }) {
   const { user } = useUser();
+  const { isDark, colors } = useTheme();
   const scrollRef = useRef(null);
 
   const [step, setStep] = useState(0); // 0=personnel, 1=services, 2=datetime, 3=summary
@@ -245,7 +247,7 @@ export default function AppointmentScreen({ navigation }) {
       {personnel.map((person) => (
         <TouchableOpacity
           key={person.id}
-          style={styles.personCard}
+          style={[styles.personCard, { backgroundColor: colors.card, borderColor: colors.border }]}
           activeOpacity={0.7}
           onPress={() => handleSelectPerson(person)}
         >
@@ -253,14 +255,14 @@ export default function AppointmentScreen({ navigation }) {
             {person.image ? (
               <Image source={{ uri: person.image }} style={styles.personAvatar} />
             ) : (
-              <View style={styles.personAvatarPlaceholder}>
-                <Ionicons name="person-outline" size={28} color={COLORS.textMuted} />
+              <View style={[styles.personAvatarPlaceholder, { backgroundColor: colors.placeholderBg }]}>
+                <Ionicons name="person-outline" size={28} color={colors.textMuted} />
               </View>
             )}
           </View>
           <View style={styles.personInfo}>
-            <Text style={styles.personName}>{person.name} {person.surname}</Text>
-            <Text style={styles.personServiceCount}>
+            <Text style={[styles.personName, { color: colors.textPrimary }]}>{person.name} {person.surname}</Text>
+            <Text style={[styles.personServiceCount, { color: colors.textSecondary }]}>
               {person.services?.length || 0} hizmet sunuyor
             </Text>
           </View>
@@ -309,12 +311,12 @@ export default function AppointmentScreen({ navigation }) {
           return (
             <TouchableOpacity
               key={index}
-              style={[styles.serviceCard, isSelected && styles.serviceCardSelected]}
+              style={[styles.serviceCard, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && [styles.serviceCardSelected, { backgroundColor: isDark ? 'rgba(123, 97, 255, 0.15)' : '#F5F3FF' }]]}
               activeOpacity={0.7}
               onPress={() => toggleService(service)}
             >
               <View style={styles.serviceInfo}>
-                <Text style={[styles.serviceName, isSelected && styles.serviceNameSelected]}>
+                <Text style={[styles.serviceName, { color: colors.textPrimary }, isSelected && styles.serviceNameSelected]}>
                   {service}
                 </Text>
                 <View style={styles.serviceMetaRow}>
@@ -378,7 +380,7 @@ export default function AppointmentScreen({ navigation }) {
       </LinearGradient>
 
       {/* Date selection - Calendar */}
-      <View style={styles.calendarContainer}>
+      <View style={[styles.calendarContainer, { backgroundColor: colors.calendarBg, borderColor: colors.border }]}>
         {/* Month navigation */}
         <View style={styles.calMonthRow}>
           <TouchableOpacity
@@ -390,7 +392,7 @@ export default function AppointmentScreen({ navigation }) {
           >
             <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
           </TouchableOpacity>
-          <Text style={styles.calMonthTitle}>
+          <Text style={[styles.calMonthTitle, { color: colors.textPrimary }]}>
             {MONTHS_TR[calMonth]} {calYear}
           </Text>
           <TouchableOpacity
@@ -468,7 +470,7 @@ export default function AppointmentScreen({ navigation }) {
           >
             <Ionicons name="chevron-back" size={20} color={COLORS.primary} />
           </TouchableOpacity>
-          <Text style={styles.calSelectedText}>
+          <Text style={[styles.calSelectedText, { color: colors.textPrimary }]}>
             {selectedDate.getDate()} {MONTHS_TR[selectedDate.getMonth()]} {selectedDate.getFullYear()}
           </Text>
           <TouchableOpacity
@@ -490,7 +492,7 @@ export default function AppointmentScreen({ navigation }) {
 
       {/* Time selection */}
       <View style={styles.timeSection}>
-        <Text style={styles.dateSectionTitle}>Saat Seçin</Text>
+        <Text style={[styles.dateSectionTitle, { color: colors.textPrimary }]}>Saat Seçin</Text>
         <View style={styles.timeGrid}>
           {(() => {
             const now = new Date();
@@ -507,11 +509,11 @@ export default function AppointmentScreen({ navigation }) {
                 <TouchableOpacity
                   key={slot}
                   disabled={isPast}
-                  style={[styles.timeSlot, isSelected && styles.timeSlotSelected, isPast && styles.timeSlotDisabled]}
+                  style={[styles.timeSlot, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && styles.timeSlotSelected, isPast && styles.timeSlotDisabled]}
                   onPress={() => setSelectedTime(slot)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.timeSlotText, isSelected && styles.timeSlotTextSelected, isPast && styles.timeSlotTextDisabled]}>
+                  <Text style={[styles.timeSlotText, { color: colors.textPrimary }, isSelected && styles.timeSlotTextSelected, isPast && styles.timeSlotTextDisabled]}>
                     {slot}
                   </Text>
                 </TouchableOpacity>
@@ -540,10 +542,10 @@ export default function AppointmentScreen({ navigation }) {
           <Text style={styles.sectionHeaderText}>Randevu Özeti</Text>
         </LinearGradient>
 
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {/* Personnel */}
           <View style={styles.summaryRow}>
-            <View style={styles.summaryIconBg}>
+            <View style={[styles.summaryIconBg, { backgroundColor: colors.cardIconBg }]}>
               {selectedPerson?.image ? (
                 <Image source={{ uri: selectedPerson.image }} style={styles.summaryPersonAvatar} />
               ) : (
@@ -551,51 +553,51 @@ export default function AppointmentScreen({ navigation }) {
               )}
             </View>
             <View style={styles.summaryContent}>
-              <Text style={styles.summaryLabel}>Personel</Text>
-              <Text style={styles.summaryValue}>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Personel</Text>
+              <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>
                 {selectedPerson?.name} {selectedPerson?.surname}
               </Text>
             </View>
           </View>
 
-          <View style={styles.summaryDivider} />
+          <View style={[styles.summaryDivider, { backgroundColor: colors.borderLight }]} />
 
           {/* Services */}
           <View style={styles.summaryRow}>
-            <View style={styles.summaryIconBg}>
+            <View style={[styles.summaryIconBg, { backgroundColor: colors.cardIconBg }]}>
               <MaterialCommunityIcons name="content-cut" size={20} color={COLORS.primary} />
             </View>
             <View style={styles.summaryContent}>
-              <Text style={styles.summaryLabel}>Hizmetler</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Hizmetler</Text>
               {selectedServices.map((s, i) => (
-                <Text key={i} style={styles.summaryServiceItem}>• {s}</Text>
+                <Text key={i} style={[styles.summaryServiceItem, { color: colors.textPrimary }]}>• {s}</Text>
               ))}
             </View>
           </View>
 
-          <View style={styles.summaryDivider} />
+          <View style={[styles.summaryDivider, { backgroundColor: colors.borderLight }]} />
 
           {/* Date */}
           <View style={styles.summaryRow}>
-            <View style={styles.summaryIconBg}>
+            <View style={[styles.summaryIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="calendar" size={20} color={COLORS.primary} />
             </View>
             <View style={styles.summaryContent}>
-              <Text style={styles.summaryLabel}>Tarih</Text>
-              <Text style={styles.summaryValue}>{dateStr}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Tarih</Text>
+              <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{dateStr}</Text>
             </View>
           </View>
 
-          <View style={styles.summaryDivider} />
+          <View style={[styles.summaryDivider, { backgroundColor: colors.borderLight }]} />
 
           {/* Time */}
           <View style={styles.summaryRow}>
-            <View style={styles.summaryIconBg}>
+            <View style={[styles.summaryIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="time" size={20} color={COLORS.primary} />
             </View>
             <View style={styles.summaryContent}>
-              <Text style={styles.summaryLabel}>Saat</Text>
-              <Text style={styles.summaryValue}>{selectedTime}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Saat</Text>
+              <Text style={[styles.summaryValue, { color: colors.textPrimary }]}>{selectedTime}</Text>
             </View>
           </View>
         </View>
@@ -621,7 +623,7 @@ export default function AppointmentScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient colors={COLORS.headerGradient} style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={goBack}>
@@ -763,12 +765,10 @@ const styles = StyleSheet.create({
   personCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: SIZES.radiusMedium,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -866,12 +866,10 @@ const styles = StyleSheet.create({
   serviceCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: SIZES.radiusMedium,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
   },
   serviceCardSelected: {
     borderColor: COLORS.primary,
@@ -923,12 +921,10 @@ const styles = StyleSheet.create({
 
   // ── Calendar ──
   calendarContainer: {
-    backgroundColor: '#FFFFFF',
     borderRadius: SIZES.radiusLarge,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -1043,9 +1039,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: SIZES.radiusSmall,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: COLORS.border,
     minWidth: 72,
     alignItems: 'center',
   },
@@ -1088,12 +1082,10 @@ const styles = StyleSheet.create({
 
   // ── Summary ──
   summaryCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: SIZES.radiusLarge,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,

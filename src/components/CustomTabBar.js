@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/theme';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ const TAB_ITEMS = [
 ];
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
+  const { isDark, colors } = useTheme();
   return (
     <View style={styles.container}>
       {/* FAB Button */}
@@ -34,7 +36,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, isDark && { backgroundColor: '#1E293B' }]}>
         {TAB_ITEMS.map((tab, index) => {
           const isFocused = state.index === index;
 

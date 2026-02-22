@@ -12,19 +12,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
 import { deleteUser } from '../services/firebaseService';
 import { clearSession } from '../services/sessionService';
 
 export default function ProfileScreen({ navigation }) {
   const { user, setUser } = useUser();
+  const { isDark, toggleTheme, colors } = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Profil</Text>
+        <TouchableOpacity
+          style={styles.themeToggle}
+          onPress={toggleTheme}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={isDark ? 'sunny' : 'moon'}
+            size={22}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
       </LinearGradient>
 
       <ScrollView
@@ -33,44 +46,44 @@ export default function ProfileScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarPlaceholder}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.background }]}>
               <Ionicons name="person" size={48} color={COLORS.primary} />
             </View>
           </View>
-          <Text style={styles.userName}>{user?.firstName || ''} {user?.lastName || ''}</Text>
-          <Text style={styles.userPhone}>{user?.phone || ''}</Text>
+          <Text style={[styles.userName, { color: colors.textPrimary }]}>{user?.firstName || ''} {user?.lastName || ''}</Text>
+          <Text style={[styles.userPhone, { color: colors.textSecondary }]}>{user?.phone || ''}</Text>
         </View>
 
         {/* Menu Items */}
-        <View style={styles.menuCard}>
+        <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={[styles.menuIconBg, { backgroundColor: '#EDE9FE' }]}>
+            <View style={[styles.menuIconBg, { backgroundColor: colors.menuIconBg1 }]}>
               <Ionicons name="person-outline" size={20} color={COLORS.primary} />
             </View>
-            <Text style={styles.menuText}>Kişisel Bilgiler</Text>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Kişisel Bilgiler</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <View style={styles.menuDivider} />
+          <View style={[styles.menuDivider, { backgroundColor: colors.borderLight }]} />
 
           <TouchableOpacity
             style={styles.menuItem}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('MyAppointments')}
           >
-            <View style={[styles.menuIconBg, { backgroundColor: '#FEF3C7' }]}>
+            <View style={[styles.menuIconBg, { backgroundColor: colors.menuIconBg2 }]}>
               <Ionicons name="calendar-outline" size={20} color={COLORS.warning} />
             </View>
-            <Text style={styles.menuText}>Randevularım</Text>
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Randevularım</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
 
         {/* Delete Account Button */}
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={[styles.deleteButton, { backgroundColor: colors.deleteButtonBg, borderColor: colors.deleteButtonBorder }]}
           activeOpacity={0.7}
           onPress={() => {
             Alert.alert(
@@ -103,7 +116,7 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Logout Button */}
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={[styles.logoutButton, { backgroundColor: colors.deleteButtonBg }]}
           activeOpacity={0.7}
           onPress={async () => {
             setUser(null);
@@ -130,6 +143,18 @@ const styles = StyleSheet.create({
     paddingTop: 55,
     paddingBottom: 20,
     alignItems: 'center',
+    position: 'relative',
+  },
+  themeToggle: {
+    position: 'absolute',
+    right: 16,
+    top: 52,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 20,

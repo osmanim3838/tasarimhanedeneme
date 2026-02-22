@@ -13,10 +13,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getSalon } from '../services/firebaseService';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ContactScreen() {
   const [salon, setSalon] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { isDark, colors } = useTheme();
 
   useEffect(() => {
     loadSalon();
@@ -33,7 +35,7 @@ export default function ContactScreen() {
     }
   };
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
@@ -72,56 +74,56 @@ export default function ContactScreen() {
         </LinearGradient>
 
         {/* Adres Bilgileri */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="location-outline" size={22} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Adres Bilgileri</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Adres Bilgileri</Text>
           </View>
-          <View style={styles.addressContainer}>
-            <Text style={styles.addressText}>{salon?.address || ''}</Text>
+          <View style={[styles.addressContainer, { backgroundColor: colors.background }]}>
+            <Text style={[styles.addressText, { color: colors.textPrimary }]}>{salon?.address || ''}</Text>
           </View>
         </View>
 
         {/* Çalışma Saatleri */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="time-outline" size={22} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Çalışma Saatleri</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Çalışma Saatleri</Text>
           </View>
-          <View style={styles.hoursContainer}>
+          <View style={[styles.hoursContainer, { backgroundColor: colors.background }]}>
             {(salon?.workingHours || []).map((item, index) => (
               <View key={index} style={styles.hourRow}>
                 <View style={styles.hourDayContainer}>
                   <View style={[styles.statusDot, item.isOpen ? styles.dotOpen : styles.dotClosed]} />
-                  <Text style={styles.hourDay}>{item.day}</Text>
+                  <Text style={[styles.hourDay, { color: colors.textPrimary }]}>{item.day}</Text>
                 </View>
-                <Text style={styles.hourTime}>{item.hours}</Text>
+                <Text style={[styles.hourTime, { color: colors.textSecondary }]}>{item.hours}</Text>
               </View>
             ))}
           </View>
         </View>
 
         {/* Sosyal Medya */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <FontAwesome5 name="share-alt" size={18} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Sosyal Medya</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Sosyal Medya</Text>
           </View>
           <View style={styles.socialContainer}>
             <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} onPress={() => Linking.openURL('https://www.instagram.com/tasarimhane.barbers.shop/')}>
-              <View style={[styles.socialIconBg, { backgroundColor: '#FCE4EC' }]}>
+              <View style={[styles.socialIconBg, { backgroundColor: isDark ? 'rgba(228, 64, 95, 0.15)' : '#FCE4EC' }]}>
                 <FontAwesome5 name="instagram" size={22} color="#E4405F" />
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} onPress={() => Linking.openURL('https://www.tiktok.com/@tasarimhane.barbers.shop')}>
-              <View style={[styles.socialIconBg, { backgroundColor: '#F0F0F0' }]}>
-                <FontAwesome5 name="tiktok" size={22} color="#000000" />
+              <View style={[styles.socialIconBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F0F0F0' }]}>
+                <FontAwesome5 name="tiktok" size={22} color={isDark ? '#FFFFFF' : '#000000'} />
               </View>
             </TouchableOpacity>
           </View>

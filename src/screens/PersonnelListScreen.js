@@ -12,10 +12,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getPersonnel } from '../services/firebaseService';
+import { useTheme } from '../context/ThemeContext';
 
 export default function PersonnelListScreen({ navigation }) {
   const [personnel, setPersonnel] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { colors } = useTheme();
 
   useEffect(() => {
     loadPersonnel();
@@ -32,7 +34,7 @@ export default function PersonnelListScreen({ navigation }) {
     }
   };
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
@@ -65,7 +67,7 @@ export default function PersonnelListScreen({ navigation }) {
             onPress={() => navigation.navigate('PersonnelDetail', { person })}
           >
             <LinearGradient
-              colors={['#EDE9FE', '#DDD6FE', '#C4B5FD']}
+              colors={colors.personCardGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.personCard}
@@ -80,7 +82,7 @@ export default function PersonnelListScreen({ navigation }) {
                 )}
               </View>
               <View style={styles.personInfo}>
-                <Text style={styles.personName}>
+                <Text style={[styles.personName, { color: colors.textPrimary }]}>
                   {person.name} {person.surname}
                 </Text>
                 <View style={styles.roleBadge}>

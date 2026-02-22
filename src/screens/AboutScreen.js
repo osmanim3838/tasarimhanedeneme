@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getSalon } from '../services/firebaseService';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const IMAGE_WIDTH = width - 32;
@@ -21,6 +22,7 @@ export default function AboutScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [salon, setSalon] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { colors } = useTheme();
 
   useEffect(() => {
     loadSalon();
@@ -45,7 +47,7 @@ export default function AboutScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
@@ -104,50 +106,50 @@ export default function AboutScreen() {
         </View>
 
         {/* Salon Bilgileri Card */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="information-circle-outline" size={22} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Salon Bilgileri</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Salon Bilgileri</Text>
           </View>
 
           <View style={styles.infoRow}>
             <FontAwesome5 name="user-tie" size={18} color={COLORS.primary} style={styles.infoIcon} />
             <View>
-              <Text style={styles.infoLabel}>Salon Sahibi</Text>
-              <Text style={styles.infoValue}>{salon?.owner?.name ? `${salon.owner.name} ${salon.owner.surname || ''}`.trim() : '-'}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Salon Sahibi</Text>
+              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{salon?.owner?.name ? `${salon.owner.name} ${salon.owner.surname || ''}`.trim() : '-'}</Text>
             </View>
           </View>
 
           <View style={styles.infoRow}>
             <Ionicons name="calendar-outline" size={20} color={COLORS.primary} style={styles.infoIcon} />
             <View>
-              <Text style={styles.infoLabel}>Kuruluş Yılı</Text>
-              <Text style={styles.infoValue}>{salon?.foundedYear || '-'}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Kuruluş Yılı</Text>
+              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{salon?.foundedYear || '-'}</Text>
             </View>
           </View>
 
           <View style={styles.infoRow}>
             <FontAwesome5 name="users" size={16} color={COLORS.primary} style={styles.infoIcon} />
             <View>
-              <Text style={styles.infoLabel}>Personel Sayısı</Text>
-              <Text style={styles.infoValue}>{salon?.staffCount || '-'}</Text>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Personel Sayısı</Text>
+              <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{salon?.staffCount || '-'}</Text>
             </View>
           </View>
         </View>
 
         {/* Salon Hakkında Card */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.cardHeader}>
-            <View style={styles.cardIconBg}>
+            <View style={[styles.cardIconBg, { backgroundColor: colors.cardIconBg }]}>
               <Ionicons name="information-circle-outline" size={22} color={COLORS.primary} />
             </View>
-            <Text style={styles.cardTitle}>Salon Hakkında</Text>
+            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Salon Hakkında</Text>
           </View>
 
-          <View style={styles.aboutContainer}>
-            <Text style={styles.aboutText}>{salon?.about || ''}</Text>
+          <View style={[styles.aboutContainer, { backgroundColor: colors.background }]}>
+            <Text style={[styles.aboutText, { color: colors.textPrimary }]}>{salon?.about || ''}</Text>
           </View>
         </View>
 
