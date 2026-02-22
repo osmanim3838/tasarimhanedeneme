@@ -14,17 +14,19 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SIZES } from '../constants/theme';
+import { clearSession } from '../services/sessionService';
 import {
   getSalon,
   getPersonnel,
   getSalonAppointments,
-  getPersonnelAppointments,
   updateSalon,
   updatePersonnel,
   addPersonnel,
   deletePersonnel,
   updateAppointmentStatus,
+  uploadImage,
 } from '../services/firebaseService';
 
 export default function OwnerDashboardScreen({ route, navigation }) {
@@ -40,9 +42,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [salonEditModal, setSalonEditModal] = useState(false);
   const [personnelModal, setPersonnelModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
-  const [selectedPersonnelId, setSelectedPersonnelId] = useState(null);
-  const [personnelAppts, setPersonnelAppts] = useState([]);
-  const [loadingPersonnelAppts, setLoadingPersonnelAppts] = useState(false);
 
   // Salon edit fields
   const [editName, setEditName] = useState('');
@@ -59,6 +58,52 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pWorkingHours, setPWorkingHours] = useState('');
   const [pDayOff, setPDayOff] = useState('');
   const [pAbout, setPAbout] = useState('');
+  const [pImage, setPImage] = useState(null);
+  const [ownerImage, setOwnerImage] = useState(salon.ownerImage || null);
+
+  const pickPersonnelImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri izni gerekiyor.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setPImage(result.assets[0].uri);
+    }
+  };
+
+  const pickOwnerImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri izni gerekiyor.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      try {
+        const url = await uploadImage(uri, `salons/${salon.id}/owner.jpg`);
+        await updateSalon(salon.id, { ownerImage: url });
+        setOwnerImage(url);
+        setSalon((prev) => ({ ...prev, ownerImage: url }));
+        Alert.alert('Başarılı', 'Profil fotoğrafı güncellendi.');
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Hata', 'Fotoğraf yüklenirken bir sorun oluştu.');
+      }
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -124,6 +169,7 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       setPWorkingHours(person.workingHours || '');
       setPDayOff(person.dayOff || '');
       setPAbout(person.about || '');
+      setPImage(null);
     } else {
       setEditingPerson(null);
       setPName('');
@@ -134,6 +180,7 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       setPWorkingHours('');
       setPDayOff('');
       setPAbout('');
+      setPImage(null);
     }
     setPersonnelModal(true);
   };
@@ -156,6 +203,11 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     };
 
     try {
+      if (pImage) {
+        const personId = editingPerson ? editingPerson.id : Date.now().toString();
+        data.image = await uploadImage(pImage, `personnel/${personId}/profile.jpg`);
+      }
+
       if (editingPerson) {
         await updatePersonnel(editingPerson.id, data);
         Alert.alert('Başarılı', 'Personel güncellendi.');
@@ -194,33 +246,9 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   };
 
   // ===== APPOINTMENT STATUS =====
-  const handleSelectPersonnel = async (personId) => {
-    if (selectedPersonnelId === personId) {
-      setSelectedPersonnelId(null);
-      setPersonnelAppts([]);
-      return;
-    }
-    setSelectedPersonnelId(personId);
-    setLoadingPersonnelAppts(true);
-    try {
-      const data = await getPersonnelAppointments(personId);
-      setPersonnelAppts(data);
-    } catch (error) {
-      console.error(error);
-      setPersonnelAppts([]);
-    } finally {
-      setLoadingPersonnelAppts(false);
-    }
-  };
-
   const handleAppointmentAction = async (appointment, status) => {
     try {
       await updateAppointmentStatus(appointment.id, status);
-      // Refresh the selected personnel's appointments
-      if (selectedPersonnelId) {
-        const data = await getPersonnelAppointments(selectedPersonnelId);
-        setPersonnelAppts(data);
-      }
       loadData();
     } catch (error) {
       Alert.alert('Hata', 'İşlem başarısız.');
@@ -246,9 +274,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={COLORS.headerGradient} style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.replace('Entry')}>
-          <Ionicons name="arrow-back" size={22} color="#FFF" />
-        </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{salon.name}</Text>
           <Text style={styles.headerSubtitle}>Yönetim Paneli</Text>
@@ -330,6 +355,20 @@ export default function OwnerDashboardScreen({ route, navigation }) {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalScroll}>
+              <TouchableOpacity style={styles.photoPickerContainer} onPress={pickPersonnelImage} activeOpacity={0.7}>
+                {pImage || (editingPerson && editingPerson.image) ? (
+                  <Image source={{ uri: pImage || editingPerson.image }} style={styles.photoPickerImage} />
+                ) : (
+                  <View style={styles.photoPickerPlaceholder}>
+                    <Ionicons name="person" size={36} color={COLORS.textMuted} />
+                  </View>
+                )}
+                <View style={styles.photoPickerBadge}>
+                  <Ionicons name="camera" size={14} color="#FFF" />
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.photoPickerHint}>Fotoğraf değiştirmek için dokunun</Text>
+
               <Text style={styles.fieldLabel}>İsim *</Text>
               <TextInput style={styles.modalInput} value={pName} onChangeText={setPName} />
               <Text style={styles.fieldLabel}>Soyisim *</Text>
@@ -486,104 +525,29 @@ export default function OwnerDashboardScreen({ route, navigation }) {
             <Text style={styles.emptyText}>Henüz personel yok</Text>
           </View>
         ) : (
-          personnel.map((person) => {
-            const isSelected = selectedPersonnelId === person.id;
-            return (
-              <View key={person.id} style={{ marginBottom: 12 }}>
-                <TouchableOpacity
-                  style={[
-                    styles.personnelApptCard,
-                    isSelected && styles.personnelApptCardActive,
-                  ]}
-                  onPress={() => handleSelectPersonnel(person.id)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.personnelApptLeft}>
-                    {person.image ? (
-                      <Image source={{ uri: person.image }} style={styles.personnelApptAvatar} />
-                    ) : (
-                      <View style={styles.personnelApptAvatarPlaceholder}>
-                        <Ionicons name="person" size={20} color={COLORS.textMuted} />
-                      </View>
-                    )}
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.personnelApptName}>{person.name} {person.surname}</Text>
-                      <Text style={styles.personnelApptRole}>{person.role || 'Personel'}</Text>
-                    </View>
-                  </View>
-                  <Ionicons
-                    name={isSelected ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={COLORS.textMuted}
-                  />
-                </TouchableOpacity>
-
-                {isSelected && (
-                  <View style={styles.personnelApptList}>
-                    {loadingPersonnelAppts ? (
-                      <View style={{ padding: 20, alignItems: 'center' }}>
-                        <ActivityIndicator size="small" color={COLORS.primary} />
-                      </View>
-                    ) : personnelAppts.length === 0 ? (
-                      <View style={{ padding: 20, alignItems: 'center' }}>
-                        <Ionicons name="calendar-outline" size={32} color={COLORS.textMuted} />
-                        <Text style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 6 }}>Randevu yok</Text>
-                      </View>
-                    ) : (
-                      personnelAppts.map((apt) => (
-                        <View key={apt.id} style={styles.appointmentCard}>
-                          <View style={styles.aptHeader}>
-                            <View style={[styles.aptStatusBadge, {
-                              backgroundColor: apt.status === 'confirmed' ? '#D1FAE5' :
-                                apt.status === 'cancelled' ? '#FEE2E2' : '#FEF3C7'
-                            }]}>
-                              <Text style={[styles.aptStatusText, {
-                                color: apt.status === 'confirmed' ? COLORS.success :
-                                  apt.status === 'cancelled' ? COLORS.error : COLORS.warning
-                              }]}>
-                                {apt.status === 'confirmed' ? 'Onaylı' :
-                                  apt.status === 'cancelled' ? 'İptal' : 'Bekliyor'}
-                              </Text>
-                            </View>
-                          </View>
-                          <Text style={styles.aptCustomer}>
-                            {apt.userName || 'Müşteri belirtilmemiş'}
-                          </Text>
-                          <Text style={styles.aptCustomerPhone}>
-                            {apt.userPhone || ''}
-                          </Text>
-                          <Text style={styles.aptService}>
-                            {(apt.services && apt.services.length > 0) ? apt.services.join(', ') : 'Hizmet belirtilmemiş'}
-                          </Text>
-                          <Text style={styles.aptDate}>
-                            {apt.date || 'Tarih belirtilmemiş'} - {apt.time || ''}
-                          </Text>
-                          {apt.status === 'pending' && (
-                            <View style={styles.aptActions}>
-                              <TouchableOpacity
-                                style={[styles.aptBtn, { backgroundColor: COLORS.success }]}
-                                onPress={() => handleAppointmentAction(apt, 'confirmed')}
-                              >
-                                <Ionicons name="checkmark" size={16} color="#FFF" />
-                                <Text style={styles.aptBtnText}>Onayla</Text>
-                              </TouchableOpacity>
-                              <TouchableOpacity
-                                style={[styles.aptBtn, { backgroundColor: COLORS.error }]}
-                                onPress={() => handleAppointmentAction(apt, 'cancelled')}
-                              >
-                                <Ionicons name="close" size={16} color="#FFF" />
-                                <Text style={styles.aptBtnText}>İptal</Text>
-                              </TouchableOpacity>
-                            </View>
-                          )}
-                        </View>
-                      ))
-                    )}
+          personnel.map((person) => (
+            <TouchableOpacity
+              key={person.id}
+              style={styles.personnelApptCard}
+              onPress={() => navigation.navigate('PersonnelAppointments', { person })}
+              activeOpacity={0.7}
+            >
+              <View style={styles.personnelApptLeft}>
+                {person.image ? (
+                  <Image source={{ uri: person.image }} style={styles.personnelApptAvatar} />
+                ) : (
+                  <View style={styles.personnelApptAvatarPlaceholder}>
+                    <Ionicons name="person" size={20} color={COLORS.textMuted} />
                   </View>
                 )}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.personnelApptName}>{person.name} {person.surname}</Text>
+                  <Text style={styles.personnelApptRole}>{person.role || 'Personel'}</Text>
+                </View>
               </View>
-            );
-          })
+              <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          ))
         )}
       </View>
     );
@@ -593,6 +557,24 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     return (
       <View>
         <Text style={styles.sectionTitle}>Salon Bilgileri</Text>
+
+        {/* Owner Profile Photo */}
+        <View style={styles.ownerProfileSection}>
+          <TouchableOpacity style={styles.photoPickerContainer} onPress={pickOwnerImage} activeOpacity={0.7}>
+            {ownerImage ? (
+              <Image source={{ uri: ownerImage }} style={styles.photoPickerImage} />
+            ) : (
+              <View style={styles.photoPickerPlaceholder}>
+                <Ionicons name="person" size={36} color={COLORS.textMuted} />
+              </View>
+            )}
+            <View style={styles.photoPickerBadge}>
+              <Ionicons name="camera" size={14} color="#FFF" />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.ownerNameText}>{salon.owner?.name} {salon.owner?.surname}</Text>
+          <Text style={styles.photoPickerHint}>Fotoğrafı değiştirmek için dokunun</Text>
+        </View>
 
         <View style={styles.settingsCard}>
           <View style={styles.settingsRow}>
@@ -624,7 +606,10 @@ export default function OwnerDashboardScreen({ route, navigation }) {
 
         <TouchableOpacity
           style={styles.logoutBtn}
-          onPress={() => navigation.replace('Entry')}
+          onPress={async () => {
+            await clearSession();
+            navigation.replace('Entry');
+          }}
         >
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={styles.logoutBtnText}>Çıkış Yap</Text>
@@ -856,12 +841,7 @@ const styles = StyleSheet.create({
     borderRadius: SIZES.radiusMedium,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
-  },
-  personnelApptCardActive: {
-    borderColor: COLORS.primary,
-    backgroundColor: '#F5F3FF',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    marginBottom: 12,
   },
   personnelApptLeft: {
     flexDirection: 'row',
@@ -891,15 +871,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textMuted,
     marginTop: 2,
-  },
-  personnelApptList: {
-    backgroundColor: '#FAFBFC',
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: COLORS.primary,
-    borderBottomLeftRadius: SIZES.radiusMedium,
-    borderBottomRightRadius: SIZES.radiusMedium,
-    padding: 10,
   },
   // Appointment Cards
   appointmentCard: {
@@ -1090,5 +1061,58 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
+  },
+  // Photo Picker
+  photoPickerContainer: {
+    alignSelf: 'center',
+    marginBottom: 8,
+    position: 'relative',
+  },
+  photoPickerImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  photoPickerPlaceholder: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoPickerBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  photoPickerHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 12,
+  },
+  ownerProfileSection: {
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: SIZES.radiusMedium,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginBottom: 16,
+  },
+  ownerNameText: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginTop: 8,
   },
 });

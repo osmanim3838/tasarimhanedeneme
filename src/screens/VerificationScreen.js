@@ -17,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getUserByPhone } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
+import { saveSession } from '../services/sessionService';
 
 export default function VerificationScreen({ route, navigation }) {
   const { phone } = route.params;
@@ -86,6 +87,7 @@ export default function VerificationScreen({ route, navigation }) {
       if (existingUser) {
         // Existing user → go directly to main
         setUser(existingUser);
+        await saveSession('user', existingUser);
         navigation.replace('MainTabs');
       } else {
         // New user → go to name screen

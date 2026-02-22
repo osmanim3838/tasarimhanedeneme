@@ -8,11 +8,12 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
-import { getUserAppointments } from '../services/firebaseService';
+import { getUserAppointments, updateAppointmentStatus } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
 
 const MONTHS_TR = [
@@ -21,7 +22,6 @@ const MONTHS_TR = [
 ];
 
 const STATUS_MAP = {
-  pending: { label: 'Beklemede', color: COLORS.warning, icon: 'time-outline', bg: '#FEF3C7' },
   confirmed: { label: 'Onaylandı', color: COLORS.success, icon: 'checkmark-circle-outline', bg: '#DCFCE7' },
   cancelled: { label: 'İptal Edildi', color: COLORS.error, icon: 'close-circle-outline', bg: '#FEE2E2' },
   completed: { label: 'Tamamlandı', color: COLORS.info, icon: 'checkmark-done-outline', bg: '#DBEAFE' },
@@ -50,6 +50,12 @@ export default function MyAppointmentsScreen({ navigation }) {
     }
     try {
       const data = await getUserAppointments(user.id);
+      // Sort by date (upcoming first, then past)
+      data.sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        return dateA.localeCompare(dateB);
+      });
       setAppointments(data);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -68,7 +74,29 @@ export default function MyAppointmentsScreen({ navigation }) {
     loadAppointments();
   };
 
-  const getStatus = (status) => STATUS_MAP[status] || STATUS_MAP.pending;
+  const getStatus = (status) => STATUS_MAP[status] || STATUS_MAP.confirmed;
+
+  const handleCancel = (appointment) => {
+    Alert.alert(
+      'Randevuyu İptal Et',
+      'Bu randevuyu iptal etmek istediğinize emin misiniz?',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'İptal Et',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await updateAppointmentStatus(appointment.id, 'cancelled');
+              loadAppointments();
+            } catch (error) {
+              Alert.alert('Hata', 'İptal işlemi başarısız oldu.');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
@@ -91,10 +119,10 @@ export default function MyAppointmentsScreen({ navigation }) {
     </View>
   );
 
-  const renderAppointmentCard = (appointment) => {
+  const renderAppointmentCard = (appointment, isPast) => {
     const status = getStatus(appointment.status);
     return (
-      <View key={appointment.id} style={styles.card}>
+      <View key={appointment.id} style={[styles.card, isPast && { opacity: 0.65 }]}>
         {/* Status badge */}
         <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
           <Ionicons name={status.icon} size={16} color={status.color} />
@@ -137,6 +165,18 @@ export default function MyAppointmentsScreen({ navigation }) {
             </Text>
           </View>
         </View>
+
+        {/* Cancel Button */}
+        {appointment.status === 'confirmed' && !isPast && (
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => handleCancel(appointment)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-circle" size={18} color="#EF4444" />
+            <Text style={styles.cancelButtonText}>Randevuyu İptal Et</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -174,10 +214,28 @@ export default function MyAppointmentsScreen({ navigation }) {
             renderEmpty()
           ) : (
             <>
-              <Text style={styles.countText}>
-                {appointments.length} randevu bulundu
-              </Text>
-              {appointments.map(renderAppointmentCard)}
+              {(() => {
+                const today = new Date().toISOString().split('T')[0];
+                const upcoming = appointments.filter((a) => a.date >= today && a.status !== 'cancelled');
+                const past = appointments.filter((a) => a.date < today || a.status === 'cancelled');
+                return (
+                  <>
+                    {upcoming.length > 0 && (
+                      <>
+                        <Text style={styles.sectionLabel}>Yaklaşan Randevular</Text>
+                        {upcoming.map((a) => renderAppointmentCard(a, false))}
+                      </>
+                    )}
+                    {past.length > 0 && (
+                      <>
+                        <Text style={[styles.sectionLabel, { marginTop: upcoming.length > 0 ? 20 : 0 }]}>Geçmiş Randevular</Text>
+                        {past.map((a) => renderAppointmentCard(a, true))}
+                      </>
+                    )}
+                    {upcoming.length === 0 && past.length === 0 && renderEmpty()}
+                  </>
+                );
+              })()}
             </>
           )}
           <View style={{ height: 30 }} />
@@ -239,6 +297,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     marginLeft: 4,
   },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginTop: 18,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
 
   // ── Card ──
   card: {
@@ -294,6 +360,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textPrimary,
     fontWeight: '600',
+  },
+
+  // ── Cancel button ──
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    gap: 6,
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#EF4444',
   },
 
   // ── Empty state ──

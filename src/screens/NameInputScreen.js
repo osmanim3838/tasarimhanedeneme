@@ -17,6 +17,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { useUser } from '../context/UserContext';
 import { createOrGetUser } from '../services/firebaseService';
+import { saveSession } from '../services/sessionService';
 
 export default function NameInputScreen({ route, navigation }) {
   const { phone } = route.params;
@@ -48,6 +49,7 @@ export default function NameInputScreen({ route, navigation }) {
     try {
       const userData = await createOrGetUser(phone, firstName, lastName);
       setUser(userData);
+      await saveSession('user', userData);
       navigation.replace('MainTabs');
     } catch (error) {
       console.error(error);

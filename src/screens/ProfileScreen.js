@@ -13,6 +13,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { useUser } from '../context/UserContext';
 import { deleteUser } from '../services/firebaseService';
+import { clearSession } from '../services/sessionService';
 
 export default function ProfileScreen({ navigation }) {
   const { user, setUser } = useUser();
@@ -84,6 +85,7 @@ export default function ProfileScreen({ navigation }) {
                     try {
                       if (user?.id) await deleteUser(user.id);
                       setUser(null);
+                      await clearSession();
                       navigation.replace('Entry');
                     } catch (e) {
                       console.error(e);
@@ -103,8 +105,9 @@ export default function ProfileScreen({ navigation }) {
         <TouchableOpacity
           style={styles.logoutButton}
           activeOpacity={0.7}
-          onPress={() => {
+          onPress={async () => {
             setUser(null);
+            await clearSession();
             navigation.replace('Entry');
           }}
         >

@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SIZES } from '../constants/theme';
-import { updatePersonnel, getPersonnelById, getPersonnelAppointments } from '../services/firebaseService';
+import { clearSession } from '../services/sessionService';
+import { updatePersonnel, getPersonnelById, getPersonnelAppointments, uploadImage } from '../services/firebaseService';
 
 export default function EmployeeDashboardScreen({ route, navigation }) {
   const { employee: initialEmployee } = route.params;
@@ -33,6 +35,24 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
   const [workingHours, setWorkingHours] = useState(employee.workingHours || '');
   const [dayOff, setDayOff] = useState(employee.dayOff || '');
   const [about, setAbout] = useState(employee.about || '');
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri izni gerekiyor.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  };
 
   // Censoring helpers
   const censorName = (fullName) => {
@@ -105,6 +125,10 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
 
     setSaving(true);
     try {
+      let imageUrl = employee.image || null;
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage, `personnel/${employee.id}/profile.jpg`);
+      }
       const data = {
         name: name.trim(),
         surname: surname.trim(),
@@ -113,9 +137,11 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
         workingHours: workingHours.trim(),
         dayOff: dayOff.trim(),
         about: about.trim(),
+        image: imageUrl,
       };
       await updatePersonnel(employee.id, data);
       setEmployee((prev) => ({ ...prev, ...data }));
+      setSelectedImage(null);
       setEditing(false);
       Alert.alert('Başarılı', 'Profiliniz güncellendi.');
     } catch (error) {
@@ -134,6 +160,7 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
     setWorkingHours(employee.workingHours || '');
     setDayOff(employee.dayOff || '');
     setAbout(employee.about || '');
+    setSelectedImage(null);
     setEditing(false);
   };
 
@@ -149,12 +176,11 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#1E293B', '#334155']} style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => {
-          if (activeTab) { setActiveTab(null); setEditing(false); }
-          else navigation.replace('Entry');
-        }}>
-          <Ionicons name="arrow-back" size={22} color="#FFF" />
-        </TouchableOpacity>
+        {activeTab ? (
+          <TouchableOpacity style={styles.backBtn} onPress={() => { setActiveTab(null); setEditing(false); }}>
+            <Ionicons name="arrow-back" size={22} color="#FFF" />
+          </TouchableOpacity>
+        ) : null}
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
             {activeTab === 'profile' ? 'Profil Bilgileri' : activeTab === 'appointments' ? 'Randevularım' : 'Personel Paneli'}
@@ -217,7 +243,10 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
             {/* Logout */}
             <TouchableOpacity
               style={styles.logoutBtn}
-              onPress={() => navigation.replace('Entry')}
+              onPress={async () => {
+                await clearSession();
+                navigation.replace('Entry');
+              }}
             >
               <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
               <Text style={styles.logoutBtnText}>Çıkış Yap</Text>
@@ -242,6 +271,20 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
 
             {editing ? (
               <View style={styles.formCard}>
+                <TouchableOpacity style={styles.photoPickerContainer} onPress={pickImage} activeOpacity={0.7}>
+                  {selectedImage || employee.image ? (
+                    <Image source={{ uri: selectedImage || employee.image }} style={styles.photoPickerImage} />
+                  ) : (
+                    <View style={styles.photoPickerPlaceholder}>
+                      <Ionicons name="person" size={40} color={COLORS.textMuted} />
+                    </View>
+                  )}
+                  <View style={styles.photoPickerBadge}>
+                    <Ionicons name="camera" size={14} color="#FFF" />
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.photoPickerHint}>Fotoğraf değiştirmek için dokunun</Text>
+
                 <Text style={styles.fieldLabel}>İsim</Text>
                 <TextInput style={styles.input} value={name} onChangeText={setName} />
 
@@ -286,14 +329,27 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
                 </View>
               </View>
             ) : (
-              <View style={styles.infoCard}>
-                <InfoRow label="İsim" value={`${employee.name} ${employee.surname}`} />
-                <InfoRow label="Rol" value={employee.role} />
-                <InfoRow label="Hizmetler" value={(employee.services || []).join(', ') || 'Belirtilmemiş'} />
-                <InfoRow label="Çalışma Saatleri" value={employee.workingHours || 'Belirtilmemiş'} />
-                <InfoRow label="İzin Günü" value={employee.dayOff || 'Belirtilmemiş'} />
-                <InfoRow label="Hakkında" value={employee.about || 'Belirtilmemiş'} last />
-              </View>
+              <>
+                <View style={styles.profilePhotoSection}>
+                  {employee.image ? (
+                    <Image source={{ uri: employee.image }} style={styles.photoPickerImage} />
+                  ) : (
+                    <View style={styles.photoPickerPlaceholder}>
+                      <Ionicons name="person" size={40} color={COLORS.textMuted} />
+                    </View>
+                  )}
+                  <Text style={styles.profilePhotoName}>{employee.name} {employee.surname}</Text>
+                  {employee.role ? <Text style={styles.profilePhotoRole}>{employee.role}</Text> : null}
+                </View>
+                <View style={styles.infoCard}>
+                  <InfoRow label="İsim" value={`${employee.name} ${employee.surname}`} />
+                  <InfoRow label="Rol" value={employee.role} />
+                  <InfoRow label="Hizmetler" value={(employee.services || []).join(', ') || 'Belirtilmemiş'} />
+                  <InfoRow label="Çalışma Saatleri" value={employee.workingHours || 'Belirtilmemiş'} />
+                  <InfoRow label="İzin Günü" value={employee.dayOff || 'Belirtilmemiş'} />
+                  <InfoRow label="Hakkında" value={employee.about || 'Belirtilmemiş'} last />
+                </View>
+              </>
             )}
           </>
         )}
@@ -320,12 +376,11 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
             ) : (
               appointments.map((appt) => {
                 const statusMap = {
-                  pending: { label: 'Bekliyor', color: '#F59E0B', bg: '#FEF3C7' },
                   confirmed: { label: 'Onaylandı', color: '#10B981', bg: '#D1FAE5' },
                   cancelled: { label: 'İptal', color: '#EF4444', bg: '#FEE2E2' },
                   completed: { label: 'Tamamlandı', color: '#6366F1', bg: '#E0E7FF' },
                 };
-                const st = statusMap[appt.status] || statusMap.pending;
+                const st = statusMap[appt.status] || statusMap.confirmed;
                 return (
                   <View key={appt.id} style={styles.apptCard}>
                     <View style={styles.apptHeader}>
@@ -457,6 +512,63 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  photoPickerContainer: {
+    alignSelf: 'center',
+    marginBottom: 8,
+    position: 'relative',
+  },
+  photoPickerImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  photoPickerPlaceholder: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoPickerBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  photoPickerHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 8,
+  },
+  profilePhotoSection: {
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: SIZES.radiusMedium,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginBottom: 16,
+  },
+  profilePhotoName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    marginTop: 10,
+  },
+  profilePhotoRole: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginTop: 4,
   },
   profileName: {
     fontSize: 20,

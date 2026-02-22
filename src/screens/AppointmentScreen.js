@@ -175,7 +175,7 @@ export default function AppointmentScreen({ navigation }) {
         personnelId: selectedPerson.id,
         personnelName: `${selectedPerson.name} ${selectedPerson.surname}`,
         services: selectedServices,
-        date: selectedDate.toISOString().split('T')[0],
+        date: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`,
         time: selectedTime,
       });
       Alert.alert('Başarılı', 'Randevunuz oluşturuldu!', [
@@ -432,7 +432,7 @@ export default function AppointmentScreen({ navigation }) {
                 ]}
                 disabled={isPast}
                 activeOpacity={0.7}
-                onPress={() => setSelectedDate(cellDate)}
+                onPress={() => { setSelectedDate(cellDate); setSelectedTime(null); }}
               >
                 <Text
                   style={[
@@ -492,21 +492,32 @@ export default function AppointmentScreen({ navigation }) {
       <View style={styles.timeSection}>
         <Text style={styles.dateSectionTitle}>Saat Seçin</Text>
         <View style={styles.timeGrid}>
-          {timeSlots.map((slot) => {
-            const isSelected = selectedTime === slot;
-            return (
-              <TouchableOpacity
-                key={slot}
-                style={[styles.timeSlot, isSelected && styles.timeSlotSelected]}
-                onPress={() => setSelectedTime(slot)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.timeSlotText, isSelected && styles.timeSlotTextSelected]}>
-                  {slot}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {(() => {
+            const now = new Date();
+            const nowMinutes = now.getHours() * 60 + now.getMinutes();
+            const isToday = selectedDate.getDate() === now.getDate() &&
+              selectedDate.getMonth() === now.getMonth() &&
+              selectedDate.getFullYear() === now.getFullYear();
+            return timeSlots.map((slot) => {
+              const isSelected = selectedTime === slot;
+              const [slotH, slotM] = slot.split(':').map(Number);
+              const slotMinutes = slotH * 60 + slotM;
+              const isPast = isToday && slotMinutes <= nowMinutes;
+              return (
+                <TouchableOpacity
+                  key={slot}
+                  disabled={isPast}
+                  style={[styles.timeSlot, isSelected && styles.timeSlotSelected, isPast && styles.timeSlotDisabled]}
+                  onPress={() => setSelectedTime(slot)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.timeSlotText, isSelected && styles.timeSlotTextSelected, isPast && styles.timeSlotTextDisabled]}>
+                    {slot}
+                  </Text>
+                </TouchableOpacity>
+              );
+            });
+          })()}
         </View>
       </View>
 
@@ -1049,6 +1060,14 @@ const styles = StyleSheet.create({
   },
   timeSlotTextSelected: {
     color: '#FFFFFF',
+  },
+  timeSlotDisabled: {
+    backgroundColor: '#F0F0F0',
+    borderColor: '#E0E0E0',
+    opacity: 0.5,
+  },
+  timeSlotTextDisabled: {
+    color: '#B0B0B0',
   },
 
   // ── Next button ──

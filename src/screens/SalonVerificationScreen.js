@@ -14,6 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
+import { saveSession } from '../services/sessionService';
 
 export default function SalonVerificationScreen({ route, navigation }) {
   const { phone, role, data } = route.params;
@@ -76,8 +77,10 @@ export default function SalonVerificationScreen({ route, navigation }) {
 
       // Phone already verified against DB in SalonLoginScreen
       if (role === 'owner') {
+        await saveSession('owner', data);
         navigation.replace('OwnerDashboard', { salon: data });
       } else {
+        await saveSession('employee', data);
         navigation.replace('EmployeeDashboard', { employee: data });
       }
     } catch (error) {

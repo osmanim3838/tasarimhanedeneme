@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -113,22 +114,12 @@ export default function ContactScreen() {
             <Text style={styles.cardTitle}>Sosyal Medya</Text>
           </View>
           <View style={styles.socialContainer}>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-              <View style={[styles.socialIconBg, { backgroundColor: '#E8F0FE' }]}>
-                <FontAwesome5 name="facebook-f" size={22} color="#1877F2" />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} onPress={() => Linking.openURL('https://www.instagram.com/tasarimhane.barbers.shop/')}>
               <View style={[styles.socialIconBg, { backgroundColor: '#FCE4EC' }]}>
                 <FontAwesome5 name="instagram" size={22} color="#E4405F" />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-              <View style={[styles.socialIconBg, { backgroundColor: '#E8F4FD' }]}>
-                <FontAwesome5 name="twitter" size={22} color="#1DA1F2" />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} onPress={() => Linking.openURL('https://www.tiktok.com/@tasarimhane.barbers.shop')}>
               <View style={[styles.socialIconBg, { backgroundColor: '#F0F0F0' }]}>
                 <FontAwesome5 name="tiktok" size={22} color="#000000" />
               </View>

@@ -12,7 +12,18 @@ import {
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../config/firebase';
+
+// ==================== IMAGE UPLOAD ====================
+
+export async function uploadImage(uri, path) {
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, blob);
+  return await getDownloadURL(storageRef);
+}
 
 // ==================== SALON ====================
 
@@ -176,7 +187,7 @@ export async function updateAppointmentStatus(appointmentId, status) {
 export async function createAppointment(data) {
   const ref = await addDoc(collection(db, 'appointments'), {
     ...data,
-    status: 'pending',
+    status: 'confirmed',
     createdAt: serverTimestamp(),
   });
   return ref.id;
