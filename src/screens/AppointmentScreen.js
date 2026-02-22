@@ -36,6 +36,17 @@ const MONTHS_TR = [
 const DAYS_TR = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 const DAYS_HEADER = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
 
+// Map Turkish day-off names to JS getDay() values (0=Sun,1=Mon,...6=Sat)
+const DAY_OFF_MAP = {
+  'Pazartesi': 1,
+  'Salı': 2,
+  'Çarşamba': 3,
+  'Perşembe': 4,
+  'Cuma': 5,
+  'Cumartesi': 6,
+  'Pazar': 0,
+};
+
 // ── Service catalog (name → { duration, price }) ──
 const SERVICE_CATALOG = {
   'Saç Kesimi':          { duration: 30, price: 450 },
@@ -422,6 +433,8 @@ export default function AppointmentScreen({ navigation }) {
             const cellDate = new Date(calYear, calMonth, day);
             cellDate.setHours(0, 0, 0, 0);
             const isPast = cellDate < today;
+            const isDayOff = selectedPerson?.dayOff && DAY_OFF_MAP[selectedPerson.dayOff] === cellDate.getDay();
+            const isDisabled = isPast || isDayOff;
             const isToday = cellDate.getTime() === today.getTime();
             const isSelected = selectedDate.toDateString() === cellDate.toDateString();
             return (
@@ -430,9 +443,10 @@ export default function AppointmentScreen({ navigation }) {
                 style={[
                   styles.calDayCell,
                   isToday && !isSelected && styles.calDayCellToday,
-                  isSelected && styles.calDayCellSelected,
+                  isSelected && !isDayOff && styles.calDayCellSelected,
+                  isDayOff && !isPast && styles.calDayCellDayOff,
                 ]}
-                disabled={isPast}
+                disabled={isDisabled}
                 activeOpacity={0.7}
                 onPress={() => { setSelectedDate(cellDate); setSelectedTime(null); }}
               >
@@ -440,8 +454,9 @@ export default function AppointmentScreen({ navigation }) {
                   style={[
                     styles.calDayText,
                     isPast && styles.calDayTextPast,
-                    isToday && !isSelected && styles.calDayTextToday,
-                    isSelected && styles.calDayTextSelected,
+                    isDayOff && !isPast && styles.calDayTextDayOff,
+                    isToday && !isSelected && !isDayOff && styles.calDayTextToday,
+                    isSelected && !isDayOff && styles.calDayTextSelected,
                   ]}
                 >
                   {day}
@@ -459,6 +474,11 @@ export default function AppointmentScreen({ navigation }) {
               const prev = new Date(selectedDate);
               prev.setDate(prev.getDate() - 1);
               prev.setHours(0, 0, 0, 0);
+              // Skip day-off days
+              const dayOffNum = selectedPerson?.dayOff ? DAY_OFF_MAP[selectedPerson.dayOff] : undefined;
+              while (dayOffNum !== undefined && prev.getDay() === dayOffNum && prev >= today) {
+                prev.setDate(prev.getDate() - 1);
+              }
               if (prev >= today) {
                 setSelectedDate(prev);
                 if (prev.getMonth() !== calMonth || prev.getFullYear() !== calYear) {
@@ -478,6 +498,11 @@ export default function AppointmentScreen({ navigation }) {
             onPress={() => {
               const next = new Date(selectedDate);
               next.setDate(next.getDate() + 1);
+              // Skip day-off days
+              const dayOffNum = selectedPerson?.dayOff ? DAY_OFF_MAP[selectedPerson.dayOff] : undefined;
+              while (dayOffNum !== undefined && next.getDay() === dayOffNum) {
+                next.setDate(next.getDate() + 1);
+              }
               setSelectedDate(next);
               if (next.getMonth() !== calMonth || next.getFullYear() !== calYear) {
                 setCalMonth(next.getMonth());
@@ -995,6 +1020,15 @@ const styles = StyleSheet.create({
   calDayTextSelected: {
     color: '#FFFFFF',
     fontWeight: '700',
+  },
+  calDayCellDayOff: {
+    borderRadius: 999,
+    backgroundColor: '#FEE2E2',
+  },
+  calDayTextDayOff: {
+    color: '#EF4444',
+    fontWeight: '600',
+    textDecorationLine: 'line-through',
   },
   calSelectedRow: {
     flexDirection: 'row',

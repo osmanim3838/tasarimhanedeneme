@@ -135,7 +135,6 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
         role: role.trim(),
         services: services.split(',').map((s) => s.trim()).filter(Boolean),
         workingHours: workingHours.trim(),
-        dayOff: dayOff.trim(),
         about: about.trim(),
         image: imageUrl,
       };
@@ -301,7 +300,11 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
                 <TextInput style={styles.input} value={workingHours} onChangeText={setWorkingHours} placeholder="10:00 - 22:00" />
 
                 <Text style={styles.fieldLabel}>İzin Günü</Text>
-                <TextInput style={styles.input} value={dayOff} onChangeText={setDayOff} placeholder="Pazartesi" />
+                <View style={[styles.input, { backgroundColor: '#F1F5F9' }]}>
+                  <Text style={{ fontSize: 15, color: '#94A3B8' }}>
+                    {employee.dayOff || 'Belirtilmemiş'} (Patron tarafından belirlenir)
+                  </Text>
+                </View>
 
                 <Text style={styles.fieldLabel}>Hakkında</Text>
                 <TextInput
@@ -697,6 +700,51 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  dropdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dayOffOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dayOffPickerContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    width: '80%',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  dayOffPickerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  dayOffOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginVertical: 2,
+  },
+  dayOffOptionSelected: {
+    backgroundColor: '#EDE9FE',
+  },
+  dayOffOptionText: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+  },
+  dayOffOptionTextSelected: {
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   formActions: {
     flexDirection: 'row',

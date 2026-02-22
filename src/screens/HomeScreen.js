@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ImageBackground,
+  Image,
   TouchableOpacity,
   ScrollView,
   Dimensions,
@@ -63,7 +64,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.headerCardInner}>
             {/* Salon Icon */}
             <View style={styles.salonIconContainer}>
-              <MaterialCommunityIcons name="content-cut" size={32} color="#FFFFFF" />
+              <Image source={require('../../assets/logo.png')} style={styles.salonLogo} />
             </View>
 
             <Text style={styles.salonName}>{salonName}</Text>
@@ -215,15 +216,19 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     marginBottom: 16,
-    shadowColor: COLORS.primary,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  salonLogo: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    resizeMode: 'cover',
   },
   salonName: {
     fontSize: 26,

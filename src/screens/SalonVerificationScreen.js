@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Image,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -121,7 +122,7 @@ export default function SalonVerificationScreen({ route, navigation }) {
           {/* Logo Area */}
           <View style={styles.logoContainer}>
             <View style={styles.logoCircle}>
-              <Ionicons name="shield-checkmark" size={48} color="#FFFFFF" />
+              <Image source={require('../../assets/logo.png')} style={styles.logoImage} />
             </View>
             <Text style={styles.title}>SMS Doğrulama</Text>
             <Text style={styles.subtitle}>
@@ -229,15 +230,19 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
     marginBottom: 20,
-    shadowColor: COLORS.primary,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 12,
+  },
+  logoImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    resizeMode: 'cover',
   },
   title: {
     fontSize: 28,
@@ -291,7 +296,8 @@ const styles = StyleSheet.create({
   },
   codeInputFilled: {
     borderColor: COLORS.primary,
-    backgroundColor: 'rgba(123, 97, 255, 0.08)',
+    backgroundColor: 'rgba(30, 41, 59, 0.85)',
+    color: '#FFFFFF',
   },
   timerContainer: {
     alignItems: 'center',

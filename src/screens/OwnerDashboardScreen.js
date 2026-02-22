@@ -42,6 +42,9 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [salonEditModal, setSalonEditModal] = useState(false);
   const [personnelModal, setPersonnelModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
+  const [dayOffPickerVisible, setDayOffPickerVisible] = useState(false);
+
+  const DAY_OFF_OPTIONS = ['Yok', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 
   // Salon edit fields
   const [editName, setEditName] = useState('');
@@ -382,7 +385,59 @@ export default function OwnerDashboardScreen({ route, navigation }) {
               <Text style={styles.fieldLabel}>Çalışma Saatleri</Text>
               <TextInput style={styles.modalInput} value={pWorkingHours} onChangeText={setPWorkingHours} placeholder="10:00 - 22:00" />
               <Text style={styles.fieldLabel}>İzin Günü</Text>
-              <TextInput style={styles.modalInput} value={pDayOff} onChangeText={setPDayOff} placeholder="Pazartesi" />
+              <TouchableOpacity
+                style={styles.modalInput}
+                onPress={() => setDayOffPickerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.dropdownRow}>
+                  <Text style={{ fontSize: 15, color: pDayOff ? COLORS.textPrimary : '#94A3B8' }}>
+                    {pDayOff || 'Seçiniz'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#94A3B8" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Day Off Picker Modal */}
+              <Modal visible={dayOffPickerVisible} transparent animationType="fade">
+                <TouchableOpacity
+                  style={styles.dayOffOverlay}
+                  activeOpacity={1}
+                  onPress={() => setDayOffPickerVisible(false)}
+                >
+                  <View style={styles.dayOffPickerContainer}>
+                    <Text style={styles.dayOffPickerTitle}>İzin Günü Seçin</Text>
+                    {DAY_OFF_OPTIONS.map((day) => (
+                      <TouchableOpacity
+                        key={day}
+                        style={[
+                          styles.dayOffOption,
+                          pDayOff === day && styles.dayOffOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setPDayOff(day === 'Yok' ? '' : day);
+                          setDayOffPickerVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.dayOffOptionText,
+                            pDayOff === day && styles.dayOffOptionTextSelected,
+                          ]}
+                        >
+                          {day}
+                        </Text>
+                        {pDayOff === day && (
+                          <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                        )}
+                        {day === 'Yok' && !pDayOff && (
+                          <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
               <Text style={styles.fieldLabel}>Hakkında</Text>
               <TextInput style={[styles.modalInput, { height: 80 }]} value={pAbout} onChangeText={setPAbout} multiline textAlignVertical="top" />
             </ScrollView>
@@ -1061,6 +1116,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFF',
+  },
+  // Dropdown styles
+  dropdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dayOffOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dayOffPickerContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    width: '80%',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  dayOffPickerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  dayOffOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginVertical: 2,
+  },
+  dayOffOptionSelected: {
+    backgroundColor: '#EDE9FE',
+  },
+  dayOffOptionText: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+  },
+  dayOffOptionTextSelected: {
+    fontWeight: '700',
+    color: COLORS.primary,
   },
   // Photo Picker
   photoPickerContainer: {

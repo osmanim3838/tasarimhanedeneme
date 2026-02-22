@@ -63,7 +63,7 @@ export default function ContactScreen() {
         >
           <View style={styles.salonBannerLogo}>
             <Image
-              source={{ uri: 'https://picsum.photos/seed/tasarimhane/100/100' }}
+              source={require('../../assets/logo.png')}
               style={styles.salonLogo}
             />
           </View>
