@@ -79,6 +79,22 @@ export default function MyAppointmentsScreen({ navigation }) {
   const getStatus = (status) => STATUS_MAP[status] || STATUS_MAP.confirmed;
 
   const handleCancel = (appointment) => {
+    // Check if appointment is within 2 hours
+    const [year, month, day] = appointment.date.split('-').map(Number);
+    const [hour, minute] = (appointment.time || '00:00').split(':').map(Number);
+    const appointmentDate = new Date(year, month - 1, day, hour, minute);
+    const now = new Date();
+    const diffMs = appointmentDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours < 2) {
+      Alert.alert(
+        'İptal Edilemez',
+        'Randevunuza 2 saatten az kaldığı için iptal işlemi yapılamaz.'
+      );
+      return;
+    }
+
     Alert.alert(
       'Randevuyu İptal Et',
       'Bu randevuyu iptal etmek istediğinize emin misiniz?',
@@ -169,16 +185,25 @@ export default function MyAppointmentsScreen({ navigation }) {
         </View>
 
         {/* Cancel Button */}
-        {appointment.status === 'confirmed' && !isPast && (
-          <TouchableOpacity
-            style={[styles.cancelButton, { backgroundColor: colors.deleteButtonBg }]}
-            onPress={() => handleCancel(appointment)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="close-circle" size={18} color="#EF4444" />
-            <Text style={styles.cancelButtonText}>Randevuyu İptal Et</Text>
-          </TouchableOpacity>
-        )}
+        {appointment.status === 'confirmed' && !isPast && (() => {
+          const [y, m, d] = appointment.date.split('-').map(Number);
+          const [h, min] = (appointment.time || '00:00').split(':').map(Number);
+          const apptDate = new Date(y, m - 1, d, h, min);
+          const hoursLeft = (apptDate.getTime() - Date.now()) / (1000 * 60 * 60);
+          const canCancel = hoursLeft >= 2;
+          return (
+            <TouchableOpacity
+              style={[styles.cancelButton, { backgroundColor: colors.deleteButtonBg }, !canCancel && { opacity: 0.5 }]}
+              onPress={() => handleCancel(appointment)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close-circle" size={18} color="#EF4444" />
+              <Text style={styles.cancelButtonText}>
+                {canCancel ? 'Randevuyu İptal Et' : 'İptal süresi doldu'}
+              </Text>
+            </TouchableOpacity>
+          );
+        })()}
       </View>
     );
   };

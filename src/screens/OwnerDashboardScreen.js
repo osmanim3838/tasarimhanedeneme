@@ -63,6 +63,34 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pAbout, setPAbout] = useState('');
   const [pImage, setPImage] = useState(null);
   const [ownerImage, setOwnerImage] = useState(salon.ownerImage || null);
+  const [salonLogo, setSalonLogo] = useState(salon.logo || null);
+
+  const pickSalonLogo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galeri izni gerekiyor.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      try {
+        const url = await uploadImage(uri, `salons/${salon.id}/logo.jpg`);
+        await updateSalon(salon.id, { logo: url });
+        setSalonLogo(url);
+        setSalon((prev) => ({ ...prev, logo: url }));
+        Alert.alert('Başarılı', 'Salon logosu güncellendi.');
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Hata', 'Logo yüklenirken bir sorun oluştu.');
+      }
+    }
+  };
 
   const pickPersonnelImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -648,9 +676,25 @@ export default function OwnerDashboardScreen({ route, navigation }) {
             <Text style={styles.settingsLabel}>Kuruluş</Text>
             <Text style={styles.settingsValue}>{salon.foundedYear}</Text>
           </View>
-          <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
+          <View style={styles.settingsRow}>
             <Text style={styles.settingsLabel}>Sahip</Text>
             <Text style={styles.settingsValue}>{salon.owner?.name} {salon.owner?.surname}</Text>
+          </View>
+          <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.settingsLabel}>Logo</Text>
+            <TouchableOpacity style={styles.logoPickerRow} onPress={pickSalonLogo}>
+              {salonLogo ? (
+                <Image source={{ uri: salonLogo }} style={styles.logoPreview} />
+              ) : (
+                <View style={styles.logoPlaceholder}>
+                  <Ionicons name="image-outline" size={22} color={COLORS.textMuted} />
+                </View>
+              )}
+              <View style={styles.logoChangeBtn}>
+                <Ionicons name="cloud-upload-outline" size={14} color={COLORS.primary} />
+                <Text style={styles.logoChangeBtnText}>Değiştir</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -1215,5 +1259,41 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.textPrimary,
     marginTop: 8,
+  },
+  logoPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logoPreview: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+  },
+  logoPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    borderStyle: 'dashed',
+  },
+  logoChangeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EDE9FE',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  logoChangeBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
   },
 });

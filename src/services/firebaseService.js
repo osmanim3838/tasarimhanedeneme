@@ -184,7 +184,23 @@ export async function updateAppointmentStatus(appointmentId, status) {
 
 // ==================== APPOINTMENTS ====================
 
+export async function getBookedSlots(personnelId, date) {
+  const q = query(
+    collection(db, 'appointments'),
+    where('personnelId', '==', personnelId),
+    where('date', '==', date),
+    where('status', 'in', ['confirmed', 'pending'])
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => d.data().time);
+}
+
 export async function createAppointment(data) {
+  // Double-check for conflicts before creating
+  const booked = await getBookedSlots(data.personnelId, data.date);
+  if (booked.includes(data.time)) {
+    throw new Error('SLOT_TAKEN');
+  }
   const ref = await addDoc(collection(db, 'appointments'), {
     ...data,
     status: 'confirmed',

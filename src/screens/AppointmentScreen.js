@@ -14,7 +14,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
-import { getPersonnel, createAppointment } from '../services/firebaseService';
+import { getPersonnel, createAppointment, getBookedSlots } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -121,6 +121,7 @@ export default function AppointmentScreen({ navigation }) {
   const [selectedTime, setSelectedTime] = useState(null);
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [bookedSlots, setBookedSlots] = useState([]);
 
   const calendarDays = getCalendarDays(calYear, calMonth);
   const timeSlots = generateTimeSlots();
@@ -130,6 +131,18 @@ export default function AppointmentScreen({ navigation }) {
   useEffect(() => {
     loadPersonnel();
   }, []);
+
+  // Fetch booked slots when person or date changes
+  useEffect(() => {
+    if (selectedPerson && selectedDate) {
+      const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+      getBookedSlots(selectedPerson.id, dateStr)
+        .then(setBookedSlots)
+        .catch(() => setBookedSlots([]));
+    } else {
+      setBookedSlots([]);
+    }
+  }, [selectedPerson, selectedDate]);
 
   const loadPersonnel = async () => {
     try {
@@ -196,7 +209,16 @@ export default function AppointmentScreen({ navigation }) {
       ]);
     } catch (error) {
       console.error(error);
-      Alert.alert('Hata', 'Randevu oluşturulurken bir sorun oluştu.');
+      if (error.message === 'SLOT_TAKEN') {
+        Alert.alert('Dolu', 'Bu saat dilimi az önce başka biri tarafından alındı. Lütfen başka bir saat seçin.');
+        // Refresh booked slots
+        const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+        getBookedSlots(selectedPerson.id, dateStr).then(setBookedSlots).catch(() => {});
+        setSelectedTime(null);
+        setStep(2);
+      } else {
+        Alert.alert('Hata', 'Randevu oluşturulurken bir sorun oluştu.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -433,8 +455,8 @@ export default function AppointmentScreen({ navigation }) {
             const cellDate = new Date(calYear, calMonth, day);
             cellDate.setHours(0, 0, 0, 0);
             const isPast = cellDate < today;
-            const isDayOff = selectedPerson?.dayOff && DAY_OFF_MAP[selectedPerson.dayOff] === cellDate.getDay();
-            const isDisabled = isPast || isDayOff;
+            const isDayOff = !!(selectedPerson?.dayOff && DAY_OFF_MAP[selectedPerson.dayOff] === cellDate.getDay());
+            const isDisabled = !!(isPast || isDayOff);
             const isToday = cellDate.getTime() === today.getTime();
             const isSelected = selectedDate.toDateString() === cellDate.toDateString();
             return (
@@ -529,18 +551,21 @@ export default function AppointmentScreen({ navigation }) {
               const isSelected = selectedTime === slot;
               const [slotH, slotM] = slot.split(':').map(Number);
               const slotMinutes = slotH * 60 + slotM;
-              const isPast = isToday && slotMinutes <= nowMinutes;
+              const isPast = !!(isToday && slotMinutes <= nowMinutes);
+              const isBooked = bookedSlots.includes(slot);
+              const isDisabled = !!(isPast || isBooked);
               return (
                 <TouchableOpacity
                   key={slot}
-                  disabled={isPast}
-                  style={[styles.timeSlot, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && styles.timeSlotSelected, isPast && styles.timeSlotDisabled]}
+                  disabled={isDisabled}
+                  style={[styles.timeSlot, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && styles.timeSlotSelected, isDisabled && styles.timeSlotDisabled, isBooked && styles.timeSlotBooked]}
                   onPress={() => setSelectedTime(slot)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.timeSlotText, { color: colors.textPrimary }, isSelected && styles.timeSlotTextSelected, isPast && styles.timeSlotTextDisabled]}>
+                  <Text style={[styles.timeSlotText, { color: colors.textPrimary }, isSelected && styles.timeSlotTextSelected, isDisabled && styles.timeSlotTextDisabled]}>
                     {slot}
                   </Text>
+                  {isBooked && <Text style={styles.timeSlotBookedLabel}>Dolu</Text>}
                 </TouchableOpacity>
               );
             });
@@ -628,7 +653,7 @@ export default function AppointmentScreen({ navigation }) {
         </View>
 
         {/* Confirm button */}
-        <TouchableOpacity onPress={handleConfirm} activeOpacity={0.8} disabled={submitting}>
+        <TouchableOpacity onPress={handleConfirm} activeOpacity={0.8} disabled={!!submitting}>
           <LinearGradient
             colors={['#10B981', '#34D399']}
             style={[styles.nextButton, submitting && { opacity: 0.7 }]}
@@ -1096,6 +1121,17 @@ const styles = StyleSheet.create({
   },
   timeSlotTextDisabled: {
     color: '#B0B0B0',
+  },
+  timeSlotBooked: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECACA',
+    opacity: 0.8,
+  },
+  timeSlotBookedLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#EF4444',
+    marginTop: 2,
   },
 
   // ── Next button ──
