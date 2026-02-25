@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,12 +16,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
-import FirebaseRecaptcha from '../components/FirebaseRecaptcha';
 
 export default function EntryScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
-  const recaptchaRef = useRef(null);
 
   const formatPhoneNumber = (text) => {
     const cleaned = text.replace(/\D/g, '');
@@ -48,22 +46,14 @@ export default function EntryScreen({ navigation }) {
     }
   };
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     const cleanDigits = phone.replace(/\D/g, '');
     if (cleanDigits.length < 10) {
       Alert.alert('Uyarı', 'Lütfen geçerli bir telefon numarası girin.');
       return;
     }
     const fullPhone = '+90' + cleanDigits;
-    setLoading(true);
-    try {
-      const verificationId = await recaptchaRef.current.sendVerification(fullPhone);
-      navigation.navigate('Verification', { phone: fullPhone, verificationId });
-    } catch (error) {
-      Alert.alert('Hata', error.message || 'SMS gönderilemedi.');
-    } finally {
-      setLoading(false);
-    }
+    navigation.navigate('Verification', { phone: fullPhone });
   };
 
   return (
@@ -150,7 +140,6 @@ export default function EntryScreen({ navigation }) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <FirebaseRecaptcha ref={recaptchaRef} />
     </ImageBackground>
   );
 }

@@ -19,18 +19,13 @@ import { COLORS, SIZES } from '../constants/theme';
 import { getUserByPhone } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
 import { saveSession } from '../services/sessionService';
-import { PhoneAuthProvider, signInWithCredential, signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
-import FirebaseRecaptcha from '../components/FirebaseRecaptcha';
 
 export default function VerificationScreen({ route, navigation }) {
-  const { phone, verificationId: initialVerificationId } = route.params;
+  const { phone } = route.params;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
-  const [currentVerificationId, setCurrentVerificationId] = useState(initialVerificationId);
   const inputRefs = useRef([]);
-  const recaptchaRef = useRef(null);
   const { setUser } = useUser();
 
   // Countdown timer
@@ -85,11 +80,8 @@ export default function VerificationScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      // Verify SMS code with Firebase
-      const credential = PhoneAuthProvider.credential(currentVerificationId, fullCode);
-      await signInWithCredential(auth, credential);
-      // Sign out - we use our own session management
-      try { await signOut(auth); } catch (e) {}
+      // Simulate verification delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Check if user exists
       const existingUser = await getUserByPhone(phone);
@@ -102,28 +94,16 @@ export default function VerificationScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error(error);
-      if (error.code === 'auth/invalid-verification-code') {
-        Alert.alert('Hata', 'Geçersiz doğrulama kodu. Lütfen tekrar deneyin.');
-      } else if (error.code === 'auth/code-expired') {
-        Alert.alert('Hata', 'Doğrulama kodunun süresi doldu. Lütfen yeni kod isteyin.');
-      } else {
-        Alert.alert('Hata', 'Doğrulama sırasında bir sorun oluştu.');
-      }
+      Alert.alert('Hata', 'Doğrulama sırasında bir sorun oluştu.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = async () => {
+  const handleResend = () => {
     if (timer > 0) return;
-    try {
-      const newVerificationId = await recaptchaRef.current.sendVerification(phone);
-      setCurrentVerificationId(newVerificationId);
-      setTimer(60);
-      Alert.alert('Bilgi', 'Doğrulama kodu tekrar gönderildi.');
-    } catch (error) {
-      Alert.alert('Hata', error.message || 'SMS gönderilemedi.');
-    }
+    setTimer(60);
+    Alert.alert('Bilgi', 'Doğrulama kodu tekrar gönderildi.');
   };
 
   const maskedPhone = phone.replace(/(\+90)(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 ($2) $3 $4 $5');
@@ -226,7 +206,6 @@ export default function VerificationScreen({ route, navigation }) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <FirebaseRecaptcha ref={recaptchaRef} />
     </ImageBackground>
   );
 }

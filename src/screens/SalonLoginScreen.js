@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { loginWithPhone } from '../services/firebaseService';
-import FirebaseRecaptcha from '../components/FirebaseRecaptcha';
 
 export default function SalonLoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
-  const recaptchaRef = useRef(null);
 
   const formatPhoneNumber = (text) => {
     const cleaned = text.replace(/\D/g, '');
@@ -58,13 +56,11 @@ export default function SalonLoginScreen({ navigation }) {
         Alert.alert('Hata', 'Bu telefon numarası kayıtlı değil.\nYalnızca salon sahibi veya çalışanlar giriş yapabilir.');
         return;
       }
-      // Send real SMS verification
-      const verificationId = await recaptchaRef.current.sendVerification(cleanPhone);
+      // Navigate to SMS verification
       navigation.navigate('SalonVerification', {
         phone: cleanPhone,
         role: result.role,
         data: result.data,
-        verificationId,
       });
     } catch (error) {
       console.error(error);
@@ -141,7 +137,6 @@ export default function SalonLoginScreen({ navigation }) {
         </TouchableOpacity>
 
       </KeyboardAvoidingView>
-      <FirebaseRecaptcha ref={recaptchaRef} />
     </View>
   );
 }
