@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { loginWithPhone } from '../services/firebaseService';
+import nativeAuth from '@react-native-firebase/auth';
 
 export default function SalonLoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
@@ -56,11 +57,13 @@ export default function SalonLoginScreen({ navigation }) {
         Alert.alert('Hata', 'Bu telefon numarası kayıtlı değil.\nYalnızca salon sahibi veya çalışanlar giriş yapabilir.');
         return;
       }
-      // Navigate to SMS verification
+      // Send real SMS verification
+      const confirmation = await nativeAuth().signInWithPhoneNumber(cleanPhone);
       navigation.navigate('SalonVerification', {
         phone: cleanPhone,
         role: result.role,
         data: result.data,
+        confirmationId: confirmation.verificationId,
       });
     } catch (error) {
       console.error(error);

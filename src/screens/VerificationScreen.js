@@ -19,12 +19,14 @@ import { COLORS, SIZES } from '../constants/theme';
 import { getUserByPhone } from '../services/firebaseService';
 import { useUser } from '../context/UserContext';
 import { saveSession } from '../services/sessionService';
+import auth from '@react-native-firebase/auth';
 
 export default function VerificationScreen({ route, navigation }) {
-  const { phone } = route.params;
+  const { phone, confirmationId } = route.params;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
+  const [currentConfirmationId, setCurrentConfirmationId] = useState(confirmationId);
   const inputRefs = useRef([]);
   const { setUser } = useUser();
 
@@ -80,10 +82,13 @@ export default function VerificationScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      // Simulate verification delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Verify SMS code via Firebase
+      const credential = auth.PhoneAuthProvider.credential(currentConfirmationId, fullCode);
+      await auth().signInWithCredential(credential);
+      // Sign out from Firebase Auth (we use our own session)
+      try { await auth().signOut(); } catch (e) {}
 
-      // Check if user exists
+      // Check if user exists in our DB
       const existingUser = await getUserByPhone(phone);
       if (existingUser) {
         setUser(existingUser);
@@ -94,16 +99,28 @@ export default function VerificationScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error(error);
-      Alert.alert('Hata', 'Doğrulama sırasında bir sorun oluştu.');
+      if (error.code === 'auth/invalid-verification-code') {
+        Alert.alert('Hata', 'Geçersiz doğrulama kodu.');
+      } else if (error.code === 'auth/code-expired') {
+        Alert.alert('Hata', 'Kodun süresi doldu. Yeni kod isteyin.');
+      } else {
+        Alert.alert('Hata', 'Doğrulama başarısız: ' + (error.message || ''));
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (timer > 0) return;
-    setTimer(60);
-    Alert.alert('Bilgi', 'Doğrulama kodu tekrar gönderildi.');
+    try {
+      const confirmation = await auth().signInWithPhoneNumber(phone);
+      setCurrentConfirmationId(confirmation.verificationId);
+      setTimer(60);
+      Alert.alert('Bilgi', 'Doğrulama kodu tekrar gönderildi.');
+    } catch (error) {
+      Alert.alert('Hata', 'SMS gönderilemedi: ' + (error.message || ''));
+    }
   };
 
   const maskedPhone = phone.replace(/(\+90)(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 ($2) $3 $4 $5');

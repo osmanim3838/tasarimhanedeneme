@@ -16,6 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
+import auth from '@react-native-firebase/auth';
 
 export default function EntryScreen({ navigation }) {
   const [phone, setPhone] = useState('');
@@ -46,14 +47,29 @@ export default function EntryScreen({ navigation }) {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const cleanDigits = phone.replace(/\D/g, '');
     if (cleanDigits.length < 10) {
       Alert.alert('Uyarı', 'Lütfen geçerli bir telefon numarası girin.');
       return;
     }
     const fullPhone = '+90' + cleanDigits;
-    navigation.navigate('Verification', { phone: fullPhone });
+    setLoading(true);
+    try {
+      const confirmation = await auth().signInWithPhoneNumber(fullPhone);
+      navigation.navigate('Verification', { phone: fullPhone, confirmationId: confirmation.verificationId });
+    } catch (error) {
+      console.error(error);
+      if (error.code === 'auth/too-many-requests') {
+        Alert.alert('Hata', 'Çok fazla istek. Lütfen biraz bekleyin.');
+      } else if (error.code === 'auth/invalid-phone-number') {
+        Alert.alert('Hata', 'Geçersiz telefon numarası.');
+      } else {
+        Alert.alert('Hata', 'SMS gönderilemedi: ' + (error.message || ''));
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

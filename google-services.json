@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "541303114598",
+    "project_id": "tasarimhane-2c03b",
+    "storage_bucket": "tasarimhane-2c03b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:541303114598:android:f5f2fb06ebd3e5349616a7",
+        "android_client_info": {
+          "package_name": "com.tasarimhane.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDunPAqFJvk-xpcjWykW_L4yKKItTPiLzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
