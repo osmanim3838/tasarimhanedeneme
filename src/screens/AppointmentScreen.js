@@ -193,7 +193,8 @@ export default function AppointmentScreen({ navigation }) {
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
-      await createAppointment({
+      const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+      const appointmentId = await createAppointment({
         salonId: 'tasarimhane',
         userId: user?.id || null,
         userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Misafir',
@@ -201,9 +202,10 @@ export default function AppointmentScreen({ navigation }) {
         personnelId: selectedPerson.id,
         personnelName: `${selectedPerson.name} ${selectedPerson.surname}`,
         services: selectedServices,
-        date: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`,
+        date: dateStr,
         time: selectedTime,
       });
+
       Alert.alert('Başarılı', 'Randevunuz oluşturuldu!', [
         { text: 'Tamam', onPress: () => navigation.goBack() },
       ]);
@@ -211,7 +213,6 @@ export default function AppointmentScreen({ navigation }) {
       console.error(error);
       if (error.message === 'SLOT_TAKEN') {
         Alert.alert('Dolu', 'Bu saat dilimi az önce başka biri tarafından alındı. Lütfen başka bir saat seçin.');
-        // Refresh booked slots
         const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
         getBookedSlots(selectedPerson.id, dateStr).then(setBookedSlots).catch(() => {});
         setSelectedTime(null);

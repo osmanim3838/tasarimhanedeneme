@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -71,6 +72,26 @@ export default function PersonnelAppointmentsScreen({ route, navigation }) {
     } catch (error) {
       Alert.alert('Hata', 'İşlem başarısız.');
     }
+  };
+
+  const sendWhatsAppReminder = (apt) => {
+    if (!apt.userPhone) {
+      Alert.alert('Hata', 'Müşterinin telefon numarası bulunamadı.');
+      return;
+    }
+    // Normalize phone to international format
+    let phone = apt.userPhone.replace(/[\s\-\(\)]/g, '');
+    if (phone.startsWith('0')) phone = '90' + phone.slice(1);
+    else if (!phone.startsWith('+') && !phone.startsWith('90')) phone = '90' + phone;
+    phone = phone.replace('+', '');
+
+    const services = Array.isArray(apt.services) ? apt.services.join(', ') : (apt.services || '');
+    const message = `Merhaba ${apt.userName || ''},\n\nTASARIMHANE randevu hatırlatması:\n\n📅 Tarih: ${apt.date}\n🕰 Saat: ${apt.time}\n✂️ Hizmet: ${services}\n💇 Personel: ${person.name} ${person.surname}\n\nSizi bekliyor olacağız. İyi günler!`;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Hata', 'WhatsApp açılamadı. Lütfen WhatsApp yüklü olduğundan emin olun.');
+    });
   };
 
   const statusMap = {
@@ -295,6 +316,19 @@ export default function PersonnelAppointmentsScreen({ route, navigation }) {
                     </View>
                   </View>
 
+                  {/* WhatsApp Reminder Button */}
+                  {apt.status === 'confirmed' && apt.userPhone && (
+                    <View style={styles.cardActions}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: '#25D366' }]}
+                        onPress={() => sendWhatsAppReminder(apt)}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="logo-whatsapp" size={18} color="#FFF" />
+                        <Text style={styles.actionBtnText}>Hatırlatma Gönder</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
 
                 </View>
               );

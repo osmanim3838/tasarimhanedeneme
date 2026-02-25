@@ -11,6 +11,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
@@ -178,8 +179,28 @@ export async function deletePersonnel(personnelId) {
 // ==================== ADMIN: APPOINTMENT MANAGEMENT ====================
 
 export async function updateAppointmentStatus(appointmentId, status) {
-  const ref = doc(db, 'appointments', appointmentId);
-  await updateDoc(ref, { status, updatedAt: serverTimestamp() });
+  const appointmentRef = doc(db, 'appointments', appointmentId);
+  await updateDoc(appointmentRef, { status, updatedAt: serverTimestamp() });
+
+  // If cancelled, also cancel the pending reminder
+  if (status === 'cancelled') {
+    try {
+      const q = query(
+        collection(db, 'reminders'),
+        where('appointmentId', '==', appointmentId),
+        where('status', '==', 'pending')
+      );
+      const snapshot = await getDocs(q);
+      for (const reminderDoc of snapshot.docs) {
+        await updateDoc(doc(db, 'reminders', reminderDoc.id), {
+          status: 'cancelled',
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      console.error('Reminder iptal hatas\u0131:', err);
+    }
+  }
 }
 
 // ==================== APPOINTMENTS ====================
@@ -206,6 +227,38 @@ export async function createAppointment(data) {
     status: 'confirmed',
     createdAt: serverTimestamp(),
   });
+
+  // Create WhatsApp reminder (1 hour before appointment)
+  try {
+    if (data.userPhone && data.date && data.time) {
+      const [year, month, day] = data.date.split('-').map(Number);
+      const [hour, minute] = data.time.split(':').map(Number);
+      const appointmentDate = new Date(year, month - 1, day, hour, minute);
+      const reminderDate = new Date(appointmentDate.getTime() - 60 * 60 * 1000);
+
+      // Normalize phone: ensure 90XXXXXXXXXX format
+      let phone = data.userPhone.replace(/[\s\-\(\)\+]/g, '');
+      if (phone.startsWith('0')) phone = '90' + phone.slice(1);
+      else if (!phone.startsWith('90')) phone = '90' + phone;
+
+      const services = Array.isArray(data.services) ? data.services.join(', ') : (data.services || '');
+      const message = `Merhaba ${data.userName || ''},\n\nTASARIMHANE randevu hat\u0131rlatmas\u0131:\n\n\ud83d\udcc5 Tarih: ${data.date}\n\ud83d\udd50 Saat: ${data.time}\n\u2702\ufe0f Hizmet: ${services}\n\ud83d\udc87 Personel: ${data.personnelName || ''}\n\nSizi bekliyor olaca\u011f\u0131z. \u0130yi g\u00fcnler!`;
+
+      if (reminderDate > new Date()) {
+        await addDoc(collection(db, 'reminders'), {
+          appointmentId: ref.id,
+          phone,
+          message,
+          sendAt: Timestamp.fromDate(reminderDate),
+          status: 'pending',
+          createdAt: serverTimestamp(),
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Reminder olu\u015fturma hatas\u0131:', err);
+  }
+
   return ref.id;
 }
 

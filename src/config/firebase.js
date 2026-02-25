@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { initializeAuth, inMemoryPersistence } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDunPAqFJvk-xpcjWykW_L4yKKItTPiLzU',
@@ -14,4 +15,5 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const auth = initializeAuth(app, { persistence: inMemoryPersistence });
 export default app;
