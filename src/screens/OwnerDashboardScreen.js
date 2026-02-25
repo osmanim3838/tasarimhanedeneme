@@ -495,13 +495,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
             <Text style={styles.statNumber}>{appointments.length}</Text>
             <Text style={styles.statLabel}>Randevu</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: '#D1FAE5' }]}>
-            <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
-            <Text style={styles.statNumber}>
-              {appointments.filter((a) => a.status === 'confirmed').length}
-            </Text>
-            <Text style={styles.statLabel}>Onaylı</Text>
-          </View>
         </View>
 
         {/* Quick Actions */}
