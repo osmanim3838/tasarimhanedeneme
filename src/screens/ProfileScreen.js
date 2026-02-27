@@ -85,6 +85,20 @@ export default function ProfileScreen({ navigation }) {
             <Text style={[styles.menuText, { color: colors.textPrimary }]}>Randevularım</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
+
+          <View style={[styles.menuDivider, { backgroundColor: colors.borderLight }]} />
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Contracts')}
+          >
+            <View style={[styles.menuIconBg, { backgroundColor: colors.menuIconBg3 }]}>
+              <Ionicons name="document-text-outline" size={20} color={COLORS.success} />
+            </View>
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Sözleşmeler</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* Delete Account Button */}
