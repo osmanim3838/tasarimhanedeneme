@@ -14,6 +14,7 @@ import HomeScreen from '../screens/HomeScreen';
 import AboutScreen from '../screens/AboutScreen';
 import ContactScreen from '../screens/ContactScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 import PersonnelListScreen from '../screens/PersonnelListScreen';
 import PersonnelDetailScreen from '../screens/PersonnelDetailScreen';
 import SalonLoginScreen from '../screens/SalonLoginScreen';
@@ -106,6 +107,7 @@ export default function AppNavigator() {
         <Stack.Screen name="PersonnelList" component={PersonnelListScreen} />
         <Stack.Screen name="PersonnelDetail" component={PersonnelDetailScreen} />
         <Stack.Screen name="PersonnelAppointments" component={PersonnelAppointmentsScreen} />
+        <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     </SafeAreaProvider>

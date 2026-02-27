@@ -40,7 +40,7 @@ export default function PersonnelListScreen({ navigation }) {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}
       >
         <TouchableOpacity
           style={styles.backButton}

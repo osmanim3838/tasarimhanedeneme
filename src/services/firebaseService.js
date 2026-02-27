@@ -111,6 +111,14 @@ export async function deleteUser(userId) {
   }
 }
 
+export async function updateUserProfile(userId, { firstName, lastName }) {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    firstName,
+    lastName,
+  });
+}
+
 // ==================== ADMIN: OWNER / EMPLOYEE LOGIN ====================
 
 // Normalize phone: strip spaces, dashes, parens. Ensure +90 prefix.

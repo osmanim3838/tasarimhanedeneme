@@ -26,7 +26,7 @@ export default function ProfileScreen({ navigation }) {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}
       >
         <Text style={styles.headerTitle}>Profil</Text>
         <TouchableOpacity
@@ -60,7 +60,11 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Menu Items */}
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity 
+            style={styles.menuItem} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('PersonalInfo')}
+          >
             <View style={[styles.menuIconBg, { backgroundColor: colors.menuIconBg1 }]}>
               <Ionicons name="person-outline" size={20} color={COLORS.primary} />
             </View>
@@ -143,13 +147,14 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingBottom: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
   },
   themeToggle: {
     position: 'absolute',
     right: 16,
-    top: 52,
     width: 40,
     height: 40,
     borderRadius: 20,

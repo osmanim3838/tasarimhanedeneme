@@ -119,7 +119,7 @@ export default function PersonnelAppointmentsScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#7B61FF', '#9B85FF']} style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}>
+      <LinearGradient colors={['#7B61FF', '#9B85FF']} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={22} color="#FFF" />
         </TouchableOpacity>

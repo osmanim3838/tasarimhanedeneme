@@ -41,7 +41,7 @@ export default function ContactScreen() {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}
       >
         <Text style={styles.headerTitle}>İletişim</Text>
       </LinearGradient>

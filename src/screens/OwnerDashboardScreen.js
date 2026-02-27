@@ -306,7 +306,7 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={COLORS.headerGradient} style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}>
+      <LinearGradient colors={COLORS.headerGradient} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{salon.name}</Text>
           <Text style={styles.headerSubtitle}>Yönetim Paneli</Text>

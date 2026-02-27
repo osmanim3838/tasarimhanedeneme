@@ -53,7 +53,7 @@ export default function AboutScreen() {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 10 }]}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}
       >
         <Text style={styles.headerTitle}>Salon Hakkında</Text>
       </LinearGradient>

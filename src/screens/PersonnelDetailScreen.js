@@ -23,7 +23,7 @@ export default function PersonnelDetailScreen({ route, navigation }) {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}
       >
         <TouchableOpacity
           style={styles.backButton}
@@ -118,8 +118,12 @@ export default function PersonnelDetailScreen({ route, navigation }) {
       </ScrollView>
 
       {/* Bottom Appointment Button */}
-      <View style={[styles.bottomBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-        <TouchableOpacity activeOpacity={0.85} style={styles.appointmentButton}>
+      <View style={[styles.bottomBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.appointmentButton}
+          onPress={() => navigation.navigate('Appointment', { personnel: person })}
+        >
           <LinearGradient
             colors={['#1E6F5C', '#2D9B7B']}
             start={{ x: 0, y: 0 }}
@@ -294,7 +298,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    paddingBottom: 34,
+    paddingTop: 16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: COLORS.border,

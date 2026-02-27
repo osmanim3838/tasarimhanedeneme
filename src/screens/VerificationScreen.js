@@ -144,7 +144,7 @@ export default function VerificationScreen({ route, navigation }) {
         >
           {/* Back Button */}
           <TouchableOpacity
-            style={[styles.backButton, { top: Math.max(insets.top, 8) + 4 }]}
+            style={[styles.backButton, { top: Math.max(insets.top, 12) + 6 }]}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >

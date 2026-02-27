@@ -176,7 +176,7 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1E293B', '#334155']} style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}>
+      <LinearGradient colors={['#1E293B', '#334155']} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
         {activeTab ? (
           <TouchableOpacity style={styles.backBtn} onPress={() => { setActiveTab(null); setEditing(false); }}>
             <Ionicons name="arrow-back" size={22} color="#FFF" />
