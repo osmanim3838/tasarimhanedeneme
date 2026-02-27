@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -83,14 +84,15 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName={initialRoute}
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-        }}
-      >
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        >
         <Stack.Screen name="Entry" component={EntryScreen} />
         <Stack.Screen name="Verification" component={VerificationScreen} />
         <Stack.Screen name="NameInput" component={NameInputScreen} />
@@ -106,5 +108,6 @@ export default function AppNavigator() {
         <Stack.Screen name="PersonnelAppointments" component={PersonnelAppointmentsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

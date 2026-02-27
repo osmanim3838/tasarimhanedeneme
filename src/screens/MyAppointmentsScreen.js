@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -41,6 +42,7 @@ function formatDate(dateStr) {
 export default function MyAppointmentsScreen({ navigation }) {
   const { user } = useUser();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -210,7 +212,7 @@ export default function MyAppointmentsScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <LinearGradient colors={COLORS.headerGradient} style={styles.header}>
+      <LinearGradient colors={COLORS.headerGradient} style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 10 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
@@ -280,7 +282,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 55 : 40,
     paddingBottom: 16,
     paddingHorizontal: 16,
   },

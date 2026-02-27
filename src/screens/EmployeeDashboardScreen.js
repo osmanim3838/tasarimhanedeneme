@@ -10,6 +10,7 @@ import {
   TextInput,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +20,7 @@ import { updatePersonnel, getPersonnelById, getPersonnelAppointments, uploadImag
 
 export default function EmployeeDashboardScreen({ route, navigation }) {
   const { employee: initialEmployee } = route.params;
+  const insets = useSafeAreaInsets();
   const [employee, setEmployee] = useState(initialEmployee);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -174,7 +176,7 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1E293B', '#334155']} style={styles.header}>
+      <LinearGradient colors={['#1E293B', '#334155']} style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}>
         {activeTab ? (
           <TouchableOpacity style={styles.backBtn} onPress={() => { setActiveTab(null); setEditing(false); }}>
             <Ionicons name="arrow-back" size={22} color="#FFF" />
@@ -444,7 +446,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 55,
     paddingBottom: 16,
     paddingHorizontal: 16,
   },

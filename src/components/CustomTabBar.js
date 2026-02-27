@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/theme';
@@ -22,6 +23,8 @@ const TAB_ITEMS = [
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
   const { isDark, colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       {/* FAB Button */}
@@ -36,7 +39,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.tabBar, isDark && { backgroundColor: '#1E293B' }]}>
+      <View style={[styles.tabBar, isDark && { backgroundColor: '#1E293B' }, { paddingBottom: Math.max(insets.bottom, 30) }]}>
         {TAB_ITEMS.map((tab, index) => {
           const isFocused = state.index === index;
 
@@ -121,7 +124,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 12,
-    paddingBottom: 30,
     paddingHorizontal: 8,
   },
   tabItem: {

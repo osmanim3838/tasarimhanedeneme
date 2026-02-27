@@ -9,6 +9,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -23,6 +24,7 @@ export default function AboutScreen() {
   const [salon, setSalon] = useState(null);
   const [loading, setLoading] = useState(true);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     loadSalon();
@@ -51,7 +53,7 @@ export default function AboutScreen() {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={styles.header}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 20) + 10 }]}
       >
         <Text style={styles.headerTitle}>Salon Hakkında</Text>
       </LinearGradient>
@@ -166,7 +168,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingTop: 55,
     paddingBottom: 20,
     alignItems: 'center',
   },

@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { loginWithPhone } from '../services/firebaseService';
@@ -17,6 +18,7 @@ import nativeAuth from '@react-native-firebase/auth';
 
 export default function SalonLoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
 
   const formatPhoneNumber = (text) => {
@@ -78,7 +80,7 @@ export default function SalonLoginScreen({ navigation }) {
     <View style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { top: Math.max(insets.top, 8) + 4 }]}
         onPress={() => navigation.goBack()}
       >
         <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -151,7 +153,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 55,
     left: 16,
     width: 44,
     height: 44,

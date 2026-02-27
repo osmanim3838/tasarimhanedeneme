@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -18,6 +19,7 @@ export default function PersonnelListScreen({ navigation }) {
   const [personnel, setPersonnel] = useState([]);
   const [loading, setLoading] = useState(true);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     loadPersonnel();
@@ -38,7 +40,7 @@ export default function PersonnelListScreen({ navigation }) {
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={styles.header}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
       >
         <TouchableOpacity
           style={styles.backButton}
@@ -107,7 +109,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingTop: 55,
     paddingBottom: 20,
     paddingHorizontal: 16,
     flexDirection: 'row',

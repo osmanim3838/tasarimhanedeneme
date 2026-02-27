@@ -12,6 +12,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -31,6 +32,7 @@ import {
 
 export default function OwnerDashboardScreen({ route, navigation }) {
   const { salon: initialSalon } = route.params;
+  const insets = useSafeAreaInsets();
   const [salon, setSalon] = useState(initialSalon);
   const [personnel, setPersonnel] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -304,7 +306,7 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={COLORS.headerGradient} style={styles.header}>
+      <LinearGradient colors={COLORS.headerGradient} style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{salon.name}</Text>
           <Text style={styles.headerSubtitle}>Yönetim Paneli</Text>
@@ -719,7 +721,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 55,
     paddingBottom: 16,
     paddingHorizontal: 16,
   },

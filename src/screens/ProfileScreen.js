@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -19,12 +20,13 @@ import { clearSession } from '../services/sessionService';
 export default function ProfileScreen({ navigation }) {
   const { user, setUser } = useUser();
   const { isDark, toggleTheme, colors } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={styles.header}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
       >
         <Text style={styles.headerTitle}>Profil</Text>
         <TouchableOpacity
@@ -140,7 +142,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingTop: 55,
     paddingBottom: 20,
     alignItems: 'center',
     position: 'relative',

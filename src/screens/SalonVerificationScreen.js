@@ -12,6 +12,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -20,6 +21,7 @@ import auth from '@react-native-firebase/auth';
 
 export default function SalonVerificationScreen({ route, navigation }) {
   const { phone, role, data, confirmationId } = route.params;
+  const insets = useSafeAreaInsets();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
@@ -129,7 +131,7 @@ export default function SalonVerificationScreen({ route, navigation }) {
         >
           {/* Back Button */}
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { top: Math.max(insets.top, 8) + 4 }]}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
           >

@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
@@ -15,13 +16,14 @@ import { useTheme } from '../context/ThemeContext';
 export default function PersonnelDetailScreen({ route, navigation }) {
   const { person } = route.params;
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <LinearGradient
         colors={COLORS.headerGradient}
-        style={styles.header}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 8) + 4 }]}
       >
         <TouchableOpacity
           style={styles.backButton}
@@ -141,7 +143,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingTop: 55,
     paddingBottom: 20,
     paddingHorizontal: 16,
     flexDirection: 'row',
