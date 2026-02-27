@@ -6,6 +6,24 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { UserProvider } from './src/context/UserContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { seedDatabase } from './src/services/firebaseService';
+import { firebase } from '@react-native-firebase/app';
+import appCheck from '@react-native-firebase/app-check';
+
+// Add this block to configure App Check
+const rnfbProvider = appCheck().newReactNativeFirebaseAppCheckProvider();
+
+rnfbProvider.configure({
+  android: {
+    // __DEV__ kontrolünü kaldırıp doğrudan 'debug' yazıyoruz
+    provider: 'debug', 
+    debugToken: '4D386123-1DD6-46AC-8472-DF9EA84976EC',
+  },
+  apple: {
+    provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
+  },
+});
+
+appCheck().initializeAppCheck({ provider: rnfbProvider, isTokenAutoRefreshEnabled: true });
 
 function NoInternetOverlay({ visible }) {
   return (
