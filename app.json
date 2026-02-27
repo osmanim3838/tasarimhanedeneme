@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tasarimhane.app"
+      "bundleIdentifier": "com.tasarimhane.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +35,11 @@
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
       "@react-native-firebase/app-check"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cc7033c9-c811-4219-8a58-398a50b7a863"
+      }
+    }
   }
 }
