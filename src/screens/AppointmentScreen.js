@@ -70,7 +70,19 @@ const SERVICE_CATALOG = {
   'Tüm Hizmetler':       { duration: null, price: null },
 };
 
-function getServiceInfo(name) {
+function getServiceInfo(nameOrService) {
+  // Handle both string and object formats
+  let name = typeof nameOrService === 'string' ? nameOrService : nameOrService?.name;
+  
+  // If it's object format with duration/price, return those
+  if (typeof nameOrService === 'object' && nameOrService?.duration) {
+    return {
+      duration: nameOrService.duration,
+      price: nameOrService.price,
+    };
+  }
+  
+  // Otherwise lookup in catalog
   return SERVICE_CATALOG[name] || { duration: null, price: null };
 }
 
@@ -358,18 +370,20 @@ export default function AppointmentScreen({ navigation }) {
         <View style={styles.servicesDivider} />
 
         {(selectedPerson?.services || []).map((service, index) => {
-          const isSelected = selectedServices.includes(service);
+          // Normalize service name
+          const serviceName = typeof service === 'string' ? service : service?.name || 'Unknown';
+          const isSelected = selectedServices.includes(serviceName);
           const info = getServiceInfo(service);
           return (
             <TouchableOpacity
               key={index}
               style={[styles.serviceCard, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && [styles.serviceCardSelected, { backgroundColor: isDark ? 'rgba(123, 97, 255, 0.15)' : '#F5F3FF' }]]}
               activeOpacity={0.7}
-              onPress={() => toggleService(service)}
+              onPress={() => toggleService(serviceName)}
             >
               <View style={styles.serviceInfo}>
                 <Text style={[styles.serviceName, { color: colors.textPrimary }, isSelected && styles.serviceNameSelected]}>
-                  {service}
+                  {serviceName}
                 </Text>
                 <View style={styles.serviceMetaRow}>
                   {info.duration != null && (

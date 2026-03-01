@@ -238,31 +238,39 @@ export default function AdminBookingModal({ visible, onClose, salon }) {
 
     if (step === 2) {
       // Service Selection
+      const getServiceName = (service) => {
+        return typeof service === 'string' ? service : service?.name || 'Unknown';
+      };
+
       return (
         <View style={styles.stepContent}>
           <Text style={styles.stepTitle}>Hizmet Seçin</Text>
           <Text style={styles.stepDescription}>Hangi hizmeti sunacaksınız?</Text>
           {selectedEmployee?.services?.length > 0 ? (
-            selectedEmployee.services.map((service, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.optionCard,
-                  selectedService === service && styles.optionCardSelected,
-                ]}
-                onPress={() => setSelectedService(service)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.optionCardText, selectedService === service && styles.optionCardTextSelected]}>
-                  {service}
-                </Text>
-                {selectedService === service && (
-                  <View style={styles.optionCheckmark}>
-                    <Ionicons name="checkmark" size={18} color={COLORS.primary} />
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))
+            selectedEmployee.services.map((service, idx) => {
+              const serviceName = getServiceName(service);
+              const isSelected = selectedService === serviceName;
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.optionCard,
+                    isSelected && styles.optionCardSelected,
+                  ]}
+                  onPress={() => setSelectedService(serviceName)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.optionCardText, isSelected && styles.optionCardTextSelected]}>
+                    {serviceName}
+                  </Text>
+                  {isSelected && (
+                    <View style={styles.optionCheckmark}>
+                      <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })
           ) : (
             <Text style={styles.emptyText}>Bu personel için hizmet tanımlanmamış.</Text>
           )}
