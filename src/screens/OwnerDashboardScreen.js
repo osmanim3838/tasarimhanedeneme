@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SIZES } from '../constants/theme';
 import { clearSession } from '../services/sessionService';
+import AdminBookingModal from '../components/AdminBookingModal';
 import {
   getSalon,
   getPersonnel,
@@ -29,6 +30,8 @@ import {
   updateAppointmentStatus,
   uploadImage,
 } from '../services/firebaseService';
+import { db } from '../config/firebase';
+import { query, where, collection, onSnapshot } from 'firebase/firestore';
 
 export default function OwnerDashboardScreen({ route, navigation }) {
   const { salon: initialSalon } = route.params;
@@ -36,6 +39,8 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [salon, setSalon] = useState(initialSalon);
   const [personnel, setPersonnel] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [todayCount, setTodayCount] = useState(0);
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -43,10 +48,20 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   // Modals
   const [salonEditModal, setSalonEditModal] = useState(false);
   const [personnelModal, setPersonnelModal] = useState(false);
+  const [adminBookingModal, setAdminBookingModal] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [dayOffPickerVisible, setDayOffPickerVisible] = useState(false);
 
   const DAY_OFF_OPTIONS = ['Yok', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+
+  // Helper function to get today's date in DD.MM.YYYY format
+  const getTodayFormattedDate = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
 
   // Salon edit fields
   const [editName, setEditName] = useState('');
@@ -59,10 +74,17 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pSurname, setPSurname] = useState('');
   const [pPhone, setPPhone] = useState('');
   const [pRole, setPRole] = useState('');
-  const [pServices, setPServices] = useState('');
+  const [servicesList, setServicesList] = useState([]);
+  const [serviceName, setServiceName] = useState('');
+  const [serviceDuration, setServiceDuration] = useState('');
+  const [servicePrice, setServicePrice] = useState('');
   const [pWorkingHours, setPWorkingHours] = useState('');
   const [pDayOff, setPDayOff] = useState('');
   const [pAbout, setPAbout] = useState('');
+  const [pLunchStart, setPLunchStart] = useState('');
+  const [pLunchEnd, setPLunchEnd] = useState('');
+  const [lunchStartPickerVisible, setLunchStartPickerVisible] = useState(false);
+  const [lunchEndPickerVisible, setLunchEndPickerVisible] = useState(false);
   const [pImage, setPImage] = useState(null);
   const [ownerImage, setOwnerImage] = useState(salon.ownerImage || null);
   const [salonLogo, setSalonLogo] = useState(salon.logo || null);
@@ -160,9 +182,73 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     loadData();
   }, [loadData]);
 
+  // Real-time listener for today's appointments
+  useEffect(() => {
+    setIsLoadingCount(true);
+    const todayDate = getTodayFormattedDate();
+    
+    const appointmentsQuery = query(
+      collection(db, 'appointments'),
+      where('salonId', '==', salon.id),
+      where('date', '==', todayDate)
+    );
+
+    const unsubscribe = onSnapshot(appointmentsQuery, (snapshot) => {
+      setTodayCount(snapshot.size);
+      setIsLoadingCount(false);
+    }, (error) => {
+      console.error('Error fetching today\'s appointments:', error);
+      setIsLoadingCount(false);
+    });
+
+    return () => unsubscribe();
+  }, [salon.id]);
+
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
+  };
+
+  // Services management functions
+  const addService = () => {
+    if (!serviceName.trim()) {
+      Alert.alert('Uyarı', 'Lütfen hizmet adı girin.');
+      return;
+    }
+    if (!serviceDuration.trim()) {
+      Alert.alert('Uyarı', 'Lütfen süreyi girin.');
+      return;
+    }
+    if (!servicePrice.trim()) {
+      Alert.alert('Uyarı', 'Lütfen fiyatı girin.');
+      return;
+    }
+
+    const newService = {
+      id: Date.now(),
+      name: serviceName.trim(),
+      duration: serviceDuration.trim(),
+      price: servicePrice.trim(),
+    };
+
+    setServicesList([...servicesList, newService]);
+    setServiceName('');
+    setServiceDuration('');
+    setServicePrice('');
+  };
+
+  const removeService = (id) => {
+    setServicesList(servicesList.filter((service) => service.id !== id));
+  };
+
+  const generateTimePickerOptions = () => {
+    const times = [];
+    for (let hour = 10; hour <= 21; hour++) {
+      for (let min = 0; min < 60; min += 30) {
+        times.push(`${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
+      }
+    }
+    return times;
   };
 
   // ===== SALON EDIT =====
@@ -198,10 +284,22 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       setPSurname(person.surname || '');
       setPPhone(person.phone || '');
       setPRole(person.role || '');
-      setPServices((person.services || []).join(', '));
+      // Convert old string array format to new object format if needed
+      const services = (person.services || []).map((service) => {
+        if (typeof service === 'string') {
+          return { id: Date.now() + Math.random(), name: service, duration: '', price: '' };
+        }
+        return service;
+      });
+      setServicesList(services);
+      setServiceName('');
+      setServiceDuration('');
+      setServicePrice('');
       setPWorkingHours(person.workingHours || '');
       setPDayOff(person.dayOff || '');
       setPAbout(person.about || '');
+      setPLunchStart(person.lunchBreak?.start || '');
+      setPLunchEnd(person.lunchBreak?.end || '');
       setPImage(null);
     } else {
       setEditingPerson(null);
@@ -209,10 +307,15 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       setPSurname('');
       setPPhone('');
       setPRole('');
-      setPServices('');
+      setServicesList([]);
+      setServiceName('');
+      setServiceDuration('');
+      setServicePrice('');
       setPWorkingHours('');
       setPDayOff('');
       setPAbout('');
+      setPLunchStart('');
+      setPLunchEnd('');
       setPImage(null);
     }
     setPersonnelModal(true);
@@ -228,10 +331,14 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       surname: pSurname.trim(),
       phone: pPhone.trim(),
       role: pRole.trim(),
-      services: pServices.split(',').map((s) => s.trim()).filter(Boolean),
+      services: servicesList,
       workingHours: pWorkingHours.trim(),
       dayOff: pDayOff.trim(),
       about: pAbout.trim(),
+      lunchBreak: {
+        start: pLunchStart || null,
+        end: pLunchEnd || null,
+      },
       salonId: salon.id,
     };
 
@@ -278,6 +385,28 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     );
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Çıkış Yap',
+      'Hesaptan çıkış yapmak istediğinize emin misiniz?',
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Çıkış Yap',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearSession();
+              navigation.replace('EntryScreen');
+            } catch (error) {
+              Alert.alert('Hata', 'Çıkış yapılırken bir sorun oluştu.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // ===== APPOINTMENT STATUS =====
   const handleAppointmentAction = async (appointment, status) => {
     try {
@@ -311,9 +440,18 @@ export default function OwnerDashboardScreen({ route, navigation }) {
           <Text style={styles.headerTitle}>{salon.name}</Text>
           <Text style={styles.headerSubtitle}>Yönetim Paneli</Text>
         </View>
-        <View style={styles.ownerBadge}>
-          <Ionicons name="shield-checkmark" size={16} color="#FFF" />
-          <Text style={styles.ownerBadgeText}>Sahip</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={styles.ownerBadge}>
+            <Ionicons name="shield-checkmark" size={16} color="#FFF" />
+            <Text style={styles.ownerBadgeText}>Sahip</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="log-out" size={20} color="#FFF" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -410,8 +548,73 @@ export default function OwnerDashboardScreen({ route, navigation }) {
               <TextInput style={styles.modalInput} value={pPhone} onChangeText={setPPhone} keyboardType="phone-pad" />
               <Text style={styles.fieldLabel}>Rol</Text>
               <TextInput style={styles.modalInput} value={pRole} onChangeText={setPRole} />
-              <Text style={styles.fieldLabel}>Hizmetler (virgülle ayırın)</Text>
-              <TextInput style={styles.modalInput} value={pServices} onChangeText={setPServices} multiline />
+              <Text style={styles.fieldLabel}>Hizmetler</Text>
+              
+              {/* Service Name Input */}
+              <Text style={[styles.fieldLabel, { marginTop: 8, fontSize: 13 }]}>Hizmet Adı</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="ör: Saç Kesimi"
+                placeholderTextColor="#999"
+                value={serviceName}
+                onChangeText={setServiceName}
+              />
+
+              {/* Duration & Price - Side by Side */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { fontSize: 13 }]}>Süre (Dk)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="30"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={serviceDuration}
+                    onChangeText={setServiceDuration}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { fontSize: 13 }]}>Fiyat (TL)</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="150"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={servicePrice}
+                    onChangeText={setServicePrice}
+                  />
+                </View>
+              </View>
+
+              {/* Add Button */}
+              <TouchableOpacity style={styles.addServiceBtn} onPress={addService} activeOpacity={0.7}>
+                <Ionicons name="add" size={20} color="#FFF" />
+                <Text style={styles.addServiceBtnText}>Hizmet Ekle</Text>
+              </TouchableOpacity>
+
+              {/* Services List */}
+              {servicesList.length > 0 && (
+                <View style={styles.servicesListContainer}>
+                  <Text style={{ fontSize: 12, color: '#64748B', marginBottom: 8 }}>
+                    Eklenen Hizmetler ({servicesList.length})
+                  </Text>
+                  {servicesList.map((service) => (
+                    <View key={service.id} style={styles.serviceCardItem}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.serviceCardName}>{service.name}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={styles.serviceCardMeta}>{service.duration} Dk</Text>
+                          <Text style={{ color: '#CBD5E1' }}>•</Text>
+                          <Text style={styles.serviceCardMeta}>{service.price} TL</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity onPress={() => removeService(service.id)} activeOpacity={0.6}>
+                        <Ionicons name="trash" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
               <Text style={styles.fieldLabel}>Çalışma Saatleri</Text>
               <TextInput style={styles.modalInput} value={pWorkingHours} onChangeText={setPWorkingHours} placeholder="10:00 - 22:00" />
               <Text style={styles.fieldLabel}>İzin Günü</Text>
@@ -468,6 +671,113 @@ export default function OwnerDashboardScreen({ route, navigation }) {
                   </View>
                 </TouchableOpacity>
               </Modal>
+
+              {/* Yemek Saati (Lunch Break) - START TIME */}
+              <Text style={styles.fieldLabel}>Yemek Saati Başlangıcı</Text>
+              <TouchableOpacity
+                style={styles.modalInput}
+                onPress={() => setLunchStartPickerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.dropdownRow}>
+                  <Text style={{ fontSize: 15, color: pLunchStart ? COLORS.textPrimary : '#94A3B8' }}>
+                    {pLunchStart || 'Seçiniz (örn: 13:00)'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#94A3B8" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Yemek Saati (Lunch Break) - END TIME */}
+              <Text style={styles.fieldLabel}>Yemek Saati Bitişi</Text>
+              <TouchableOpacity
+                style={styles.modalInput}
+                onPress={() => setLunchEndPickerVisible(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.dropdownRow}>
+                  <Text style={{ fontSize: 15, color: pLunchEnd ? COLORS.textPrimary : '#94A3B8' }}>
+                    {pLunchEnd || 'Seçiniz (örn: 14:00)'}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#94A3B8" />
+                </View>
+              </TouchableOpacity>
+
+              {/* Time Picker Modal for Lunch Start */}
+              <Modal visible={lunchStartPickerVisible} transparent animationType="fade">
+                <TouchableOpacity
+                  style={styles.dayOffOverlay}
+                  activeOpacity={1}
+                  onPress={() => setLunchStartPickerVisible(false)}
+                >
+                  <View style={styles.dayOffPickerContainer}>
+                    <Text style={styles.dayOffPickerTitle}>Başlangıç Saati Seçin</Text>
+                    {generateTimePickerOptions().map((time) => (
+                      <TouchableOpacity
+                        key={time}
+                        style={[
+                          styles.dayOffOption,
+                          pLunchStart === time && styles.dayOffOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setPLunchStart(time);
+                          setLunchStartPickerVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.dayOffOptionText,
+                            pLunchStart === time && styles.dayOffOptionTextSelected,
+                          ]}
+                        >
+                          {time}
+                        </Text>
+                        {pLunchStart === time && (
+                          <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+
+              {/* Time Picker Modal for Lunch End */}
+              <Modal visible={lunchEndPickerVisible} transparent animationType="fade">
+                <TouchableOpacity
+                  style={styles.dayOffOverlay}
+                  activeOpacity={1}
+                  onPress={() => setLunchEndPickerVisible(false)}
+                >
+                  <View style={styles.dayOffPickerContainer}>
+                    <Text style={styles.dayOffPickerTitle}>Bitiş Saati Seçin</Text>
+                    {generateTimePickerOptions().map((time) => (
+                      <TouchableOpacity
+                        key={time}
+                        style={[
+                          styles.dayOffOption,
+                          pLunchEnd === time && styles.dayOffOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setPLunchEnd(time);
+                          setLunchEndPickerVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.dayOffOptionText,
+                            pLunchEnd === time && styles.dayOffOptionTextSelected,
+                          ]}
+                        >
+                          {time}
+                        </Text>
+                        {pLunchEnd === time && (
+                          <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+
               <Text style={styles.fieldLabel}>Hakkında</Text>
               <TextInput style={[styles.modalInput, { height: 80 }]} value={pAbout} onChangeText={setPAbout} multiline textAlignVertical="top" />
             </ScrollView>
@@ -477,6 +787,13 @@ export default function OwnerDashboardScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* Admin Booking Modal */}
+      <AdminBookingModal
+        visible={adminBookingModal}
+        onClose={() => setAdminBookingModal(false)}
+        salon={salon}
+      />
     </View>
   );
 
@@ -492,10 +809,14 @@ export default function OwnerDashboardScreen({ route, navigation }) {
             <Text style={styles.statNumber}>{personnel.length}</Text>
             <Text style={styles.statLabel}>Personel</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: '#FEF3C7' }]}>
-            <Ionicons name="calendar" size={20} color={COLORS.warning} />
-            <Text style={styles.statNumber}>{appointments.length}</Text>
-            <Text style={styles.statLabel}>Randevu</Text>
+          <View style={[styles.statCard, { backgroundColor: '#DCFCE7' }]}>
+            <Ionicons name="today" size={20} color="#22C55E" />
+            {isLoadingCount ? (
+              <ActivityIndicator size="small" color="#22C55E" />
+            ) : (
+              <Text style={styles.statNumber}>{todayCount}</Text>
+            )}
+            <Text style={styles.statLabel}>Bugün</Text>
           </View>
         </View>
 
@@ -540,10 +861,16 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       <View>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Personel Listesi</Text>
-          <TouchableOpacity style={styles.addButton} onPress={() => openPersonnelEdit()}>
-            <Ionicons name="add" size={20} color="#FFF" />
-            <Text style={styles.addButtonText}>Ekle</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity style={styles.addButton} onPress={() => setAdminBookingModal(true)}>
+              <Ionicons name="add-circle" size={20} color="#FFF" />
+              <Text style={styles.addButtonText}>Randevu</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addButton} onPress={() => openPersonnelEdit()}>
+              <Ionicons name="add" size={20} color="#FFF" />
+              <Text style={styles.addButtonText}>Ekle</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {personnel.map((person) => (
@@ -758,6 +1085,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#FFF',
+  },
+  logoutBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabBar: {
     flexDirection: 'row',
@@ -1289,5 +1624,78 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.primary,
+  },
+  // Services dynamic list styles
+  servicesInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addServiceBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: SIZES.radiusMedium,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  addServiceBtnText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  servicesListContainer: {
+    marginBottom: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: SIZES.radiusMedium,
+    padding: 12,
+  },
+  serviceCardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: SIZES.radiusSmall,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  serviceCardName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  serviceCardMeta: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  serviceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0F4FF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  serviceChipText: {
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+    flex: 1,
   },
 });

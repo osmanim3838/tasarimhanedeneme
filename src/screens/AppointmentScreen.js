@@ -89,6 +89,22 @@ function generateTimeSlots(start = '10:00', end = '21:30', interval = 30) {
   return slots;
 }
 
+function isTimeInLunchBreak(timeSlot, lunchBreak) {
+  if (!lunchBreak || !lunchBreak.start || !lunchBreak.end) return false;
+  
+  const [slotH, slotM] = timeSlot.split(':').map(Number);
+  const slotMinutes = slotH * 60 + slotM;
+  
+  const [startH, startM] = lunchBreak.start.split(':').map(Number);
+  const startMinutes = startH * 60 + startM;
+  
+  const [endH, endM] = lunchBreak.end.split(':').map(Number);
+  const endMinutes = endH * 60 + endM;
+  
+  // Check if slot falls within lunch break start and end
+  return slotMinutes >= startMinutes && slotMinutes < endMinutes;
+}
+
 function generateDates() { return []; } // kept for compat
 
 function getCalendarDays(year, month) {
@@ -556,12 +572,13 @@ export default function AppointmentScreen({ navigation }) {
               const slotMinutes = slotH * 60 + slotM;
               const isPast = !!(isToday && slotMinutes <= nowMinutes);
               const isBooked = bookedSlots.includes(slot);
-              const isDisabled = !!(isPast || isBooked);
+              const isLunchBreak = isTimeInLunchBreak(slot, selectedPerson?.lunchBreak);
+              const isDisabled = !!(isPast || isBooked || isLunchBreak);
               return (
                 <TouchableOpacity
                   key={slot}
                   disabled={isDisabled}
-                  style={[styles.timeSlot, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && styles.timeSlotSelected, isDisabled && styles.timeSlotDisabled, isBooked && styles.timeSlotBooked]}
+                  style={[styles.timeSlot, { backgroundColor: colors.card, borderColor: colors.border }, isSelected && styles.timeSlotSelected, isDisabled && styles.timeSlotDisabled, isBooked && styles.timeSlotBooked, isLunchBreak && styles.timeSlotLunchBreak]}
                   onPress={() => setSelectedTime(slot)}
                   activeOpacity={0.7}
                 >
@@ -569,6 +586,7 @@ export default function AppointmentScreen({ navigation }) {
                     {slot}
                   </Text>
                   {isBooked && <Text style={styles.timeSlotBookedLabel}>Dolu</Text>}
+                  {isLunchBreak && <Text style={styles.timeSlotLunchBreakLabel}>Yemek Saati</Text>}
                 </TouchableOpacity>
               );
             });
@@ -1133,6 +1151,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#EF4444',
+    marginTop: 2,
+  },
+  timeSlotLunchBreak: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#D1D5DB',
+    opacity: 0.7,
+  },
+  timeSlotLunchBreakLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#6B7280',
     marginTop: 2,
   },
 

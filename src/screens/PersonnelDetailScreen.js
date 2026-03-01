@@ -72,13 +72,25 @@ export default function PersonnelDetailScreen({ route, navigation }) {
             </View>
             <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Hizmetlerim</Text>
           </View>
-          {person.services.map((service, index) => (
-            <View key={index} style={[styles.serviceRow, { backgroundColor: colors.background }]}>
-              <View style={styles.serviceDot} />
-              <Text style={[styles.serviceText, { color: colors.textPrimary }]}>{service}</Text>
-              <Ionicons name="checkmark" size={22} color={COLORS.success} />
-            </View>
-          ))}
+          {person.services && person.services.length > 0 ? (
+            person.services.map((service, index) => {
+              const serviceName = typeof service === 'string' ? service : service.name;
+              const serviceDuration = typeof service === 'string' ? null : service.duration;
+              const servicePrice = typeof service === 'string' ? null : service.price;
+              return (
+                <View key={index} style={[styles.serviceRow, { backgroundColor: colors.background }]}>
+                  <View style={styles.serviceDot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.serviceText, { color: colors.textPrimary }]}>{serviceName}</Text>
+                    {serviceDuration && <Text style={{ fontSize: 12, color: colors.textSecondary }}>{serviceDuration} Dk • {servicePrice} TL</Text>}
+                  </View>
+                  <Ionicons name="checkmark" size={22} color={COLORS.success} />
+                </View>
+              );
+            })
+          ) : (
+            <Text style={[styles.noServiceText, { color: colors.textSecondary }]}>Henüz hizmet tanımlanmamış</Text>
+          )}
         </View>
 
         {/* Hakkımda */}
@@ -260,6 +272,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: COLORS.textPrimary,
+  },
+  noServiceText: {
+    fontSize: 14,
+    padding: 16,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   aboutContainer: {
     backgroundColor: COLORS.background,
