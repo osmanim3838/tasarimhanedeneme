@@ -41,11 +41,15 @@
         {
           "ios": {
             "useFrameworks": "static",
-            "forceStaticLinking": ["RNFBApp", "RNFBAuth", "RNFBAppCheck"]
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth",
+              "RNFBAppCheck"
+            ]
           }
         }
       ]
-    ],e
+    ],
     "extra": {
       "eas": {
         "projectId": "cc7033c9-c811-4219-8a58-398a50b7a863"
