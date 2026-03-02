@@ -18,14 +18,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { saveSession } from '../services/sessionService';
 import auth from '@react-native-firebase/auth';
+import { salonPhoneConfirmation } from './SalonLoginScreen';
 
 export default function SalonVerificationScreen({ route, navigation }) {
-  const { phone, role, data, confirmationId } = route.params;
+  const { phone, role, data } = route.params;
   const insets = useSafeAreaInsets();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
-  const [currentConfirmationId, setCurrentConfirmationId] = useState(confirmationId);
+  const [currentConfirmation, setCurrentConfirmation] = useState(salonPhoneConfirmation);
   const inputRefs = useRef([]);
 
   useEffect(() => {
@@ -77,9 +78,13 @@ export default function SalonVerificationScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      // Verify SMS code via Firebase
-      const credential = auth.PhoneAuthProvider.credential(currentConfirmationId, fullCode);
-      await auth().signInWithCredential(credential);
+      // Verify SMS code via Firebase using the confirmation object
+      if (!currentConfirmation) {
+        Alert.alert('Hata', 'Doğrulama oturumu bulunamadı. Lütfen geri dönüp tekrar deneyin.');
+        setLoading(false);
+        return;
+      }
+      await currentConfirmation.confirm(fullCode);
       // Sign out from Firebase Auth (we use our own session)
       try { await auth().signOut(); } catch (e) {}
 
@@ -109,7 +114,7 @@ export default function SalonVerificationScreen({ route, navigation }) {
     if (timer > 0) return;
     try {
       const confirmation = await auth().signInWithPhoneNumber(phone);
-      setCurrentConfirmationId(confirmation.verificationId);
+      setCurrentConfirmation(confirmation);
       setTimer(60);
       Alert.alert('Bilgi', 'Doğrulama kodu tekrar gönderildi.');
     } catch (error) {

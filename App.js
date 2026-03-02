@@ -6,24 +6,16 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { UserProvider } from './src/context/UserContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { seedDatabase } from './src/services/firebaseService';
-import { firebase } from '@react-native-firebase/app';
-import appCheck from '@react-native-firebase/app-check';
 
-// Add this block to configure App Check
-const rnfbProvider = appCheck().newReactNativeFirebaseAppCheckProvider();
+// Initialize App Check lazily inside the app component
+let appCheckInitialized = false;
 
-rnfbProvider.configure({
-  android: {
-    // __DEV__ kontrolünü kaldırıp doğrudan 'debug' yazıyoruz
-    provider: 'debug', 
-    debugToken: '4D386123-1DD6-46AC-8472-DF9EA84976EC',
-  },
-  apple: {
-    provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback',
-  },
-});
-
-appCheck().initializeAppCheck({ provider: rnfbProvider, isTokenAutoRefreshEnabled: true });
+async function initializeAppCheck() {
+  if (appCheckInitialized) return;
+  // Disabled for iOS compatibility - causes phone auth issues
+  // Re-enable when you have a proper App Attest key configured in Firebase Console
+  appCheckInitialized = true;
+}
 
 function NoInternetOverlay({ visible }) {
   return (
@@ -57,6 +49,8 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
+    // Initialize Firebase and App Check
+    initializeAppCheck().catch(console.error);
     seedDatabase().catch(console.error);
   }, []);
 

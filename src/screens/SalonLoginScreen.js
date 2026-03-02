@@ -16,6 +16,9 @@ import { COLORS, SIZES } from '../constants/theme';
 import { loginWithPhone } from '../services/firebaseService';
 import nativeAuth from '@react-native-firebase/auth';
 
+// Store the salon confirmation result globally so SalonVerificationScreen can access it
+export let salonPhoneConfirmation = null;
+
 export default function SalonLoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const insets = useSafeAreaInsets();
@@ -61,11 +64,11 @@ export default function SalonLoginScreen({ navigation }) {
       }
       // Send real SMS verification
       const confirmation = await nativeAuth().signInWithPhoneNumber(cleanPhone);
+      salonPhoneConfirmation = confirmation;
       navigation.navigate('SalonVerification', {
         phone: cleanPhone,
         role: result.role,
         data: result.data,
-        confirmationId: confirmation.verificationId,
       });
     } catch (error) {
       console.error(error);

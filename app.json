@@ -17,7 +17,14 @@
       "bundleIdentifier": "com.tasarimhane.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.541303114598-calmvfkrd2hj2q7ojo99rhrkllhpnfln"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -35,7 +42,6 @@
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/auth",
-      "@react-native-firebase/app-check",
       [
         "expo-build-properties",
         {
@@ -43,8 +49,7 @@
             "useFrameworks": "static",
             "forceStaticLinking": [
               "RNFBApp",
-              "RNFBAuth",
-              "RNFBAppCheck"
+              "RNFBAuth"
             ]
           }
         }

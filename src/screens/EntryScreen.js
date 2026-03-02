@@ -18,6 +18,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import auth from '@react-native-firebase/auth';
 
+// Store the confirmation result globally so VerificationScreen can access it
+export let phoneConfirmation = null;
+
 export default function EntryScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,10 +59,15 @@ export default function EntryScreen({ navigation }) {
     const fullPhone = '+90' + cleanDigits;
     setLoading(true);
     try {
+      console.log('[EntryScreen] Starting phone auth with:', fullPhone);
       const confirmation = await auth().signInWithPhoneNumber(fullPhone);
-      navigation.navigate('Verification', { phone: fullPhone, confirmationId: confirmation.verificationId });
+      console.log('[EntryScreen] Phone auth success, confirmation received');
+      
+      // Store the confirmation object for use in VerificationScreen
+      phoneConfirmation = confirmation;
+      navigation.navigate('Verification', { phone: fullPhone });
     } catch (error) {
-      console.error(error);
+      console.error('[EntryScreen] Phone auth error:', error.code, error.message);
       if (error.code === 'auth/too-many-requests') {
         Alert.alert('Hata', 'Çok fazla istek. Lütfen biraz bekleyin.');
       } else if (error.code === 'auth/invalid-phone-number') {
