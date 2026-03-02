@@ -59,9 +59,11 @@ export default function EntryScreen({ navigation }) {
     const fullPhone = '+90' + cleanDigits;
     setLoading(true);
     try {
-      console.log('[EntryScreen] Starting phone auth with:', fullPhone);
+      // On iOS, force reCAPTCHA flow to avoid APNs dependency
+      if (Platform.OS === 'ios') {
+        auth().settings.appVerificationDisabledForTesting = false;
+      }
       const confirmation = await auth().signInWithPhoneNumber(fullPhone);
-      console.log('[EntryScreen] Phone auth success, confirmation received');
       
       // Store the confirmation object for use in VerificationScreen
       phoneConfirmation = confirmation;

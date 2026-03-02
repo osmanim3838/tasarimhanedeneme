@@ -63,6 +63,9 @@ export default function SalonLoginScreen({ navigation }) {
         return;
       }
       // Send real SMS verification
+      if (Platform.OS === 'ios') {
+        nativeAuth().settings.appVerificationDisabledForTesting = false;
+      }
       const confirmation = await nativeAuth().signInWithPhoneNumber(cleanPhone);
       salonPhoneConfirmation = confirmation;
       navigation.navigate('SalonVerification', {

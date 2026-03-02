@@ -7,16 +7,6 @@ import { UserProvider } from './src/context/UserContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { seedDatabase } from './src/services/firebaseService';
 
-// Initialize App Check lazily inside the app component
-let appCheckInitialized = false;
-
-async function initializeAppCheck() {
-  if (appCheckInitialized) return;
-  // Disabled for iOS compatibility - causes phone auth issues
-  // Re-enable when you have a proper App Attest key configured in Firebase Console
-  appCheckInitialized = true;
-}
-
 function NoInternetOverlay({ visible }) {
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -49,8 +39,6 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    // Initialize Firebase and App Check
-    initializeAppCheck().catch(console.error);
     seedDatabase().catch(console.error);
   }, []);
 
