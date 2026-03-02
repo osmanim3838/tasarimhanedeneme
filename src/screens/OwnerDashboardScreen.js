@@ -11,6 +11,7 @@ import {
   Modal,
   Image,
   RefreshControl,
+  LayoutAnimation,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -88,6 +89,12 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pImage, setPImage] = useState(null);
   const [ownerImage, setOwnerImage] = useState(salon.ownerImage || null);
   const [salonLogo, setSalonLogo] = useState(salon.logo || null);
+  const [isServicesExpanded, setIsServicesExpanded] = useState(false);
+
+  const toggleServicesExpanded = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsServicesExpanded(!isServicesExpanded);
+  };
 
   const pickSalonLogo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -592,27 +599,45 @@ export default function OwnerDashboardScreen({ route, navigation }) {
                 <Text style={styles.addServiceBtnText}>Hizmet Ekle</Text>
               </TouchableOpacity>
 
-              {/* Services List */}
+              {/* Services List - Expandable */}
               {servicesList.length > 0 && (
-                <View style={styles.servicesListContainer}>
-                  <Text style={{ fontSize: 12, color: '#64748B', marginBottom: 8 }}>
-                    Eklenen Hizmetler ({servicesList.length})
-                  </Text>
-                  {servicesList.map((service) => (
-                    <View key={service.id} style={styles.serviceCardItem}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.serviceCardName}>{service.name}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Text style={styles.serviceCardMeta}>{service.duration} Dk</Text>
-                          <Text style={{ color: '#CBD5E1' }}>•</Text>
-                          <Text style={styles.serviceCardMeta}>{service.price} TL</Text>
-                        </View>
-                      </View>
-                      <TouchableOpacity onPress={() => removeService(service.id)} activeOpacity={0.6}>
-                        <Ionicons name="trash" size={18} color="#EF4444" />
-                      </TouchableOpacity>
+                <View>
+                  <TouchableOpacity 
+                    style={styles.expandServicesBtn} 
+                    onPress={toggleServicesExpanded}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
+                      <Ionicons 
+                        name={isServicesExpanded ? 'chevron-up' : 'chevron-down'} 
+                        size={20} 
+                        color="#64748B" 
+                      />
+                      <Text style={styles.expandServicesBtnText}>
+                        Eklenen Hizmetler ({servicesList.length})
+                      </Text>
                     </View>
-                  ))}
+                  </TouchableOpacity>
+                  
+                  {isServicesExpanded && (
+                    <View style={styles.servicesListContainer}>
+                      {servicesList.map((service) => (
+                        <View key={service.id} style={styles.serviceCardItem}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.serviceCardName}>{service.name}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <Text style={styles.serviceCardMeta}>{service.duration} Dk</Text>
+                              <Text style={{ color: '#CBD5E1' }}>•</Text>
+                              <Text style={styles.serviceCardMeta}>{service.price} TL</Text>
+                            </View>
+                          </View>
+                          <TouchableOpacity onPress={() => removeService(service.id)} activeOpacity={0.6}>
+                            <Ionicons name="trash" size={18} color="#EF4444" />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               )}
               <Text style={styles.fieldLabel}>Çalışma Saatleri</Text>
@@ -1646,6 +1671,22 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '600',
     fontSize: 14,
+  },
+  expandServicesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: SIZES.radiusMedium,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  expandServicesBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
   },
   servicesListContainer: {
     marginBottom: 16,
