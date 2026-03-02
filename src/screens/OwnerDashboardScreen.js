@@ -404,7 +404,7 @@ export default function OwnerDashboardScreen({ route, navigation }) {
           onPress: async () => {
             try {
               await clearSession();
-              navigation.replace('EntryScreen');
+              navigation.replace('Entry');
             } catch (error) {
               Alert.alert('Hata', 'Çıkış yapılırken bir sorun oluştu.');
             }
