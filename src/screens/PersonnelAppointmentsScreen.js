@@ -97,7 +97,7 @@ export default function PersonnelAppointmentsScreen({ route, navigation }) {
   };
 
   const statusMap = {
-    confirmed: { label: 'Onaylandı', color: '#10B981', bg: '#D1FAE5' },
+    confirmed: { label: '', color: '#10B981', bg: '#D1FAE5' },
     cancelled: { label: 'İptal', color: '#EF4444', bg: '#FEE2E2' },
     completed: { label: 'Tamamlandı', color: '#6366F1', bg: '#E0E7FF' },
   };

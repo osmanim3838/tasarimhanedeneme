@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '../constants/theme';
 import { getPersonnel, getBookedSlots, createAppointment } from '../services/firebaseService';
+import CalendarDatePicker from './CalendarDatePicker';
 
 function generateTimeSlots(start = '10:00', end = '21:30', interval = 30) {
   const slots = [];
@@ -285,39 +286,21 @@ export default function AdminBookingModal({ visible, onClose, salon }) {
           <Text style={styles.stepTitle}>Tarih ve Saat Seçin</Text>
           <Text style={styles.stepDescription}>Randevu hangi tarih ve saatte?</Text>
 
-          {/* Date Picker */}
-          <View style={styles.datePickerSection}>
-            <Text style={styles.dateSectionLabel}>Tarih</Text>
-            <View style={styles.dateDisplay}>
-              <Text style={styles.dateDisplayText}>
-                {selectedDate.getDate()}/{selectedDate.getMonth() + 1}/{selectedDate.getFullYear()}
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity
-                  style={styles.dateNavBtn}
-                  onPress={() => {
-                    const prev = new Date(selectedDate);
-                    prev.setDate(prev.getDate() - 1);
-                    setSelectedDate(prev);
-                    setSelectedTime(null);
-                  }}
-                >
-                  <Ionicons name="chevron-back" size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.dateNavBtn}
-                  onPress={() => {
-                    const next = new Date(selectedDate);
-                    next.setDate(next.getDate() + 1);
-                    setSelectedDate(next);
-                    setSelectedTime(null);
-                  }}
-                >
-                  <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+          {/* Beautiful Calendar Date Picker */}
+          <CalendarDatePicker
+            selectedDate={selectedDate}
+            onSelectDate={(date) => {
+              setSelectedDate(date);
+              setSelectedTime(null);
+            }}
+            selectedPerson={selectedEmployee}
+            colors={{
+              calendarBg: '#FFFFFF',
+              border: '#E2E8F0',
+              textPrimary: '#1F2937',
+            }}
+            minDate={new Date()}
+          />
 
           {/* Time Picker */}
           <View style={styles.timePickerSection}>

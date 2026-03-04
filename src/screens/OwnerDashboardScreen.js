@@ -11,7 +11,6 @@ import {
   Modal,
   Image,
   RefreshControl,
-  LayoutAnimation,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SIZES } from '../constants/theme';
 import { clearSession } from '../services/sessionService';
 import AdminBookingModal from '../components/AdminBookingModal';
+import ServicesManager from '../components/ServicesManager';
 import {
   getSalon,
   getPersonnel,
@@ -76,9 +76,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pPhone, setPPhone] = useState('');
   const [pRole, setPRole] = useState('');
   const [servicesList, setServicesList] = useState([]);
-  const [serviceName, setServiceName] = useState('');
-  const [serviceDuration, setServiceDuration] = useState('');
-  const [servicePrice, setServicePrice] = useState('');
   const [pWorkingHours, setPWorkingHours] = useState('');
   const [pDayOff, setPDayOff] = useState('');
   const [pAbout, setPAbout] = useState('');
@@ -89,12 +86,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pImage, setPImage] = useState(null);
   const [ownerImage, setOwnerImage] = useState(salon.ownerImage || null);
   const [salonLogo, setSalonLogo] = useState(salon.logo || null);
-  const [isServicesExpanded, setIsServicesExpanded] = useState(false);
-
-  const toggleServicesExpanded = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsServicesExpanded(!isServicesExpanded);
-  };
 
   const pickSalonLogo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -216,38 +207,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     loadData();
   };
 
-  // Services management functions
-  const addService = () => {
-    if (!serviceName.trim()) {
-      Alert.alert('Uyarı', 'Lütfen hizmet adı girin.');
-      return;
-    }
-    if (!serviceDuration.trim()) {
-      Alert.alert('Uyarı', 'Lütfen süreyi girin.');
-      return;
-    }
-    if (!servicePrice.trim()) {
-      Alert.alert('Uyarı', 'Lütfen fiyatı girin.');
-      return;
-    }
-
-    const newService = {
-      id: Date.now(),
-      name: serviceName.trim(),
-      duration: serviceDuration.trim(),
-      price: servicePrice.trim(),
-    };
-
-    setServicesList([...servicesList, newService]);
-    setServiceName('');
-    setServiceDuration('');
-    setServicePrice('');
-  };
-
-  const removeService = (id) => {
-    setServicesList(servicesList.filter((service) => service.id !== id));
-  };
-
   const generateTimePickerOptions = () => {
     const times = [];
     for (let hour = 10; hour <= 21; hour++) {
@@ -294,14 +253,11 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       // Convert old string array format to new object format if needed
       const services = (person.services || []).map((service) => {
         if (typeof service === 'string') {
-          return { id: Date.now() + Math.random(), name: service, duration: '', price: '' };
+          return { id: `service-${Date.now()}-${Math.random()}`, name: service, duration: '', price: '' };
         }
-        return service;
+        return { ...service, id: service.id || `service-${Date.now()}-${Math.random()}` };
       });
       setServicesList(services);
-      setServiceName('');
-      setServiceDuration('');
-      setServicePrice('');
       setPWorkingHours(person.workingHours || '');
       setPDayOff(person.dayOff || '');
       setPAbout(person.about || '');
@@ -315,9 +271,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       setPPhone('');
       setPRole('');
       setServicesList([]);
-      setServiceName('');
-      setServiceDuration('');
-      setServicePrice('');
       setPWorkingHours('');
       setPDayOff('');
       setPAbout('');
@@ -555,91 +508,13 @@ export default function OwnerDashboardScreen({ route, navigation }) {
               <TextInput style={styles.modalInput} value={pPhone} onChangeText={setPPhone} keyboardType="phone-pad" />
               <Text style={styles.fieldLabel}>Rol</Text>
               <TextInput style={styles.modalInput} value={pRole} onChangeText={setPRole} />
-              <Text style={styles.fieldLabel}>Hizmetler</Text>
               
-              {/* Service Name Input */}
-              <Text style={[styles.fieldLabel, { marginTop: 8, fontSize: 13 }]}>Hizmet Adı</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="ör: Saç Kesimi"
-                placeholderTextColor="#999"
-                value={serviceName}
-                onChangeText={setServiceName}
+              <ServicesManager
+                servicesList={servicesList}
+                onServicesChange={setServicesList}
+                readonly={false}
               />
 
-              {/* Duration & Price - Side by Side */}
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { fontSize: 13 }]}>Süre (Dk)</Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder="30"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={serviceDuration}
-                    onChangeText={setServiceDuration}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { fontSize: 13 }]}>Fiyat (TL)</Text>
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder="150"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    value={servicePrice}
-                    onChangeText={setServicePrice}
-                  />
-                </View>
-              </View>
-
-              {/* Add Button */}
-              <TouchableOpacity style={styles.addServiceBtn} onPress={addService} activeOpacity={0.7}>
-                <Ionicons name="add" size={20} color="#FFF" />
-                <Text style={styles.addServiceBtnText}>Hizmet Ekle</Text>
-              </TouchableOpacity>
-
-              {/* Services List - Expandable */}
-              {servicesList.length > 0 && (
-                <View>
-                  <TouchableOpacity 
-                    style={styles.expandServicesBtn} 
-                    onPress={toggleServicesExpanded}
-                    activeOpacity={0.7}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 }}>
-                      <Ionicons 
-                        name={isServicesExpanded ? 'chevron-up' : 'chevron-down'} 
-                        size={20} 
-                        color="#64748B" 
-                      />
-                      <Text style={styles.expandServicesBtnText}>
-                        Eklenen Hizmetler ({servicesList.length})
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                  
-                  {isServicesExpanded && (
-                    <View style={styles.servicesListContainer}>
-                      {servicesList.map((service) => (
-                        <View key={service.id} style={styles.serviceCardItem}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.serviceCardName}>{service.name}</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                              <Text style={styles.serviceCardMeta}>{service.duration} Dk</Text>
-                              <Text style={{ color: '#CBD5E1' }}>•</Text>
-                              <Text style={styles.serviceCardMeta}>{service.price} TL</Text>
-                            </View>
-                          </View>
-                          <TouchableOpacity onPress={() => removeService(service.id)} activeOpacity={0.6}>
-                            <Ionicons name="trash" size={18} color="#EF4444" />
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              )}
               <Text style={styles.fieldLabel}>Çalışma Saatleri</Text>
               <TextInput style={styles.modalInput} value={pWorkingHours} onChangeText={setPWorkingHours} placeholder="10:00 - 22:00" />
               <Text style={styles.fieldLabel}>İzin Günü</Text>

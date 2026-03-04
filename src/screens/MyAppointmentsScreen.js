@@ -24,7 +24,7 @@ const MONTHS_TR = [
 ];
 
 const STATUS_MAP = {
-  confirmed: { label: 'Onaylandı', color: COLORS.success, icon: 'checkmark-circle-outline', bg: '#DCFCE7' },
+  confirmed: { label: '', color: COLORS.success, icon: 'checkmark-circle-outline', bg: '#DCFCE7' },
   cancelled: { label: 'İptal Edildi', color: COLORS.error, icon: 'close-circle-outline', bg: '#FEE2E2' },
   completed: { label: 'Tamamlandı', color: COLORS.info, icon: 'checkmark-done-outline', bg: '#DBEAFE' },
 };

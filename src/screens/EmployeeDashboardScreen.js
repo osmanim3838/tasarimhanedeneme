@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { COLORS, SIZES } from '../constants/theme';
 import { clearSession } from '../services/sessionService';
 import { updatePersonnel, getPersonnelById, getPersonnelAppointments, uploadImage } from '../services/firebaseService';
+import ServicesManager from '../components/ServicesManager';
 
 export default function EmployeeDashboardScreen({ route, navigation }) {
   const { employee: initialEmployee } = route.params;
@@ -33,7 +34,16 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
   const [name, setName] = useState(employee.name || '');
   const [surname, setSurname] = useState(employee.surname || '');
   const [role, setRole] = useState(employee.role || '');
-  const [services, setServices] = useState((employee.services || []).join(', '));
+  const [servicesList, setServicesList] = useState(
+    Array.isArray(employee.services) && employee.services.length > 0
+      ? employee.services.map((s, idx) => ({
+          id: s.id || `service-${Date.now()}-${idx}`, // Use existing id or generate unique one
+          name: typeof s === 'string' ? s : s.name || '',
+          duration: typeof s === 'object' ? s.duration || '' : '',
+          price: typeof s === 'object' ? s.price || '' : '',
+        }))
+      : []
+  );
   const [workingHours, setWorkingHours] = useState(employee.workingHours || '');
   const [dayOff, setDayOff] = useState(employee.dayOff || '');
   const [about, setAbout] = useState(employee.about || '');
@@ -107,7 +117,32 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
         setName(data.name || '');
         setSurname(data.surname || '');
         setRole(data.role || '');
-        setServices((data.services || []).join(', '));
+        // Handle both old string format and new object array format
+        if (Array.isArray(data.services) && data.services.length > 0) {
+          if (typeof data.services[0] === 'object') {
+            // Ensure each service has a unique id
+            setServicesList(
+              data.services.map((s, idx) => ({
+                id: s.id || `service-${Date.now()}-${idx}`,
+                name: s.name || '',
+                duration: s.duration || '',
+                price: s.price || '',
+              }))
+            );
+          } else {
+            // Convert old string format to objects with unique IDs
+            setServicesList(
+              data.services.map((s, idx) => ({
+                id: `service-${Date.now()}-${idx}`,
+                name: typeof s === 'string' ? s : s.name || '',
+                duration: typeof s === 'object' ? s.duration || '' : '',
+                price: typeof s === 'object' ? s.price || '' : '',
+              }))
+            );
+          }
+        } else {
+          setServicesList([]);
+        }
         setWorkingHours(data.workingHours || '');
         setDayOff(data.dayOff || '');
         setAbout(data.about || '');
@@ -135,7 +170,7 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
         name: name.trim(),
         surname: surname.trim(),
         role: role.trim(),
-        services: services.split(',').map((s) => s.trim()).filter(Boolean),
+        services: servicesList, // Now saving as array of objects with name, duration, price
         workingHours: workingHours.trim(),
         about: about.trim(),
         image: imageUrl,
@@ -157,7 +192,30 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
     setName(employee.name || '');
     setSurname(employee.surname || '');
     setRole(employee.role || '');
-    setServices((employee.services || []).join(', '));
+    // Reset servicesList to original values
+    if (Array.isArray(employee.services) && employee.services.length > 0) {
+      if (typeof employee.services[0] === 'object') {
+        setServicesList(
+          employee.services.map((s, idx) => ({
+            id: s.id || `service-${Date.now()}-${idx}`,
+            name: s.name || '',
+            duration: s.duration || '',
+            price: s.price || '',
+          }))
+        );
+      } else {
+        setServicesList(
+          employee.services.map((s, idx) => ({
+            id: `service-${Date.now()}-${idx}`,
+            name: typeof s === 'string' ? s : s.name || '',
+            duration: typeof s === 'object' ? s.duration || '' : '',
+            price: typeof s === 'object' ? s.price || '' : '',
+          }))
+        );
+      }
+    } else {
+      setServicesList([]);
+    }
     setWorkingHours(employee.workingHours || '');
     setDayOff(employee.dayOff || '');
     setAbout(employee.about || '');
@@ -295,8 +353,11 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
                 <Text style={styles.fieldLabel}>Rol / Ünvan</Text>
                 <TextInput style={styles.input} value={role} onChangeText={setRole} />
 
-                <Text style={styles.fieldLabel}>Hizmetler (virgülle ayırın)</Text>
-                <TextInput style={styles.input} value={services} onChangeText={setServices} multiline />
+                <ServicesManager
+                  servicesList={servicesList}
+                  onServicesChange={setServicesList}
+                  readonly={false}
+                />
 
                 <Text style={styles.fieldLabel}>Çalışma Saatleri</Text>
                 <TextInput style={styles.input} value={workingHours} onChangeText={setWorkingHours} placeholder="10:00 - 22:00" />
@@ -349,7 +410,11 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
                 <View style={styles.infoCard}>
                   <InfoRow label="İsim" value={`${employee.name} ${employee.surname}`} />
                   <InfoRow label="Rol" value={employee.role} />
-                  <InfoRow label="Hizmetler" value={(employee.services || []).join(', ') || 'Belirtilmemiş'} />
+                  <ServicesManager
+                    servicesList={employee.services || []}
+                    onServicesChange={() => {}} // Read-only, no changes allowed
+                    readonly={true}
+                  />
                   <InfoRow label="Çalışma Saatleri" value={employee.workingHours || 'Belirtilmemiş'} />
                   <InfoRow label="İzin Günü" value={employee.dayOff || 'Belirtilmemiş'} />
                   <InfoRow label="Hakkında" value={employee.about || 'Belirtilmemiş'} last />
@@ -381,7 +446,7 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
             ) : (
               appointments.map((appt) => {
                 const statusMap = {
-                  confirmed: { label: 'Onaylandı', color: '#10B981', bg: '#D1FAE5' },
+                  confirmed: { label: '', color: '#10B981', bg: '#D1FAE5' },
                   cancelled: { label: 'İptal', color: '#EF4444', bg: '#FEE2E2' },
                   completed: { label: 'Tamamlandı', color: '#6366F1', bg: '#E0E7FF' },
                 };
