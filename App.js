@@ -2,10 +2,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Modal, AppState } from 'react-native';
 import * as Network from 'expo-network';
+import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import { UserProvider } from './src/context/UserContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { seedDatabase } from './src/services/firebaseService';
+import PushNotificationManager from './src/services/PushNotificationManager';
 
 function NoInternetOverlay({ visible }) {
   return (
@@ -62,6 +64,7 @@ function AppContent() {
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'light'} />
+      <PushNotificationManager />
       <AppNavigator />
       <NoInternetOverlay visible={!isConnected} />
     </>

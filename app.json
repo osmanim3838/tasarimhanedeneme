@@ -24,7 +24,8 @@
               "com.googleusercontent.apps.541303114598-calmvfkrd2hj2q7ojo99rhrkllhpnfln"
             ]
           }
-        ]
+        ],
+        "UIUserInterfaceStyle": "Light"
       }
     },
     "android": {
@@ -34,7 +35,11 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.tasarimhane.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.INTERNET"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

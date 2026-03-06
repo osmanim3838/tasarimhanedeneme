@@ -61,9 +61,10 @@ export async function getPersonnelById(personnelId) {
 // ==================== USERS ====================
 
 export async function createOrGetUser(phone, firstName, lastName) {
+  const normalizedPhone = normalizePhone(phone);
   const q = query(
     collection(db, 'users'),
-    where('phone', '==', phone)
+    where('phone', '==', normalizedPhone)
   );
   const snapshot = await getDocs(q);
 
@@ -75,7 +76,7 @@ export async function createOrGetUser(phone, firstName, lastName) {
   const userRef = await addDoc(collection(db, 'users'), {
     firstName,
     lastName,
-    phone,
+    phone: normalizedPhone,
     createdAt: serverTimestamp(),
   });
 
@@ -83,14 +84,15 @@ export async function createOrGetUser(phone, firstName, lastName) {
     id: userRef.id,
     firstName,
     lastName,
-    phone,
+    phone: normalizedPhone,
   };
 }
 
 export async function getUserByPhone(phone) {
+  const normalizedPhone = normalizePhone(phone);
   const q = query(
     collection(db, 'users'),
-    where('phone', '==', phone)
+    where('phone', '==', normalizedPhone)
   );
   const snapshot = await getDocs(q);
   if (!snapshot.empty) {
@@ -122,7 +124,7 @@ export async function updateUserProfile(userId, { firstName, lastName }) {
 // ==================== ADMIN: OWNER / EMPLOYEE LOGIN ====================
 
 // Normalize phone: strip spaces, dashes, parens. Ensure +90 prefix.
-function normalizePhone(p) {
+export function normalizePhone(p) {
   if (!p) return '';
   let cleaned = p.replace(/[\s\-\(\)]/g, '');
   // Remove leading +90 or 90 to get raw 10-digit number
@@ -211,6 +213,185 @@ export async function updateAppointmentStatus(appointmentId, status) {
   }
 }
 
+// ==================== PUSH NOTIFICATIONS ====================
+
+// Register push token for user (customer)
+export async function registerPushTokenForUser(userId, expoPushToken) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      expoPushToken,
+      pushTokenUpdatedAt: serverTimestamp(),
+    });
+    console.log(`✅ Push token registered for user ${userId}`);
+  } catch (error) {
+    console.error('Error registering push token for user:', error);
+  }
+}
+
+// Register push token for employee
+export async function registerPushTokenForEmployee(employeeId, expoPushToken) {
+  try {
+    const employeeRef = doc(db, 'personnel', employeeId);
+    await updateDoc(employeeRef, {
+      expoPushToken,
+      pushTokenUpdatedAt: serverTimestamp(),
+    });
+    console.log(`✅ Push token registered for employee ${employeeId}`);
+  } catch (error) {
+    console.error('Error registering push token for employee:', error);
+  }
+}
+
+export async function sendPushNotificationToEmployee(employeeId, title, body, data = {}) {
+  try {
+    // Get employee's push token
+    const employeeRef = doc(db, 'personnel', employeeId);
+    const employeeSnap = await getDoc(employeeRef);
+
+    if (!employeeSnap.exists()) {
+      console.log(`Employee ${employeeId} not found`);
+      return;
+    }
+
+    const employeeData = employeeSnap.data();
+    const expoPushToken = employeeData?.expoPushToken;
+
+    if (!expoPushToken) {
+      console.log(`No push token for employee ${employeeId}`);
+      return;
+    }
+
+    // Send push notification via Expo
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: expoPushToken,
+        sound: 'default',
+        title,
+        body,
+        data,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Push notification failed:', await response.text());
+      return;
+    }
+
+    console.log(`✅ Push notification sent to employee ${employeeId}`);
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+    // Don't throw - notifications are non-critical
+  }
+}
+
+// Send push notification to user by phone number
+export async function sendPushNotificationToUserByPhone(phone, title, body, data = {}) {
+  try {
+    const normalizedPhone = normalizePhone(phone);
+    
+    // Find user by phone number
+    const q = query(
+      collection(db, 'users'),
+      where('phone', '==', normalizedPhone)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      console.log(`No user found with phone: ${phone}`);
+      return;
+    }
+
+    const userDoc = snapshot.docs[0];
+    const userData = userDoc.data();
+    const expoPushToken = userData?.expoPushToken;
+
+    if (!expoPushToken) {
+      console.log(`No push token for user with phone: ${phone}`);
+      return;
+    }
+
+    // Send push notification via Expo
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: expoPushToken,
+        sound: 'default',
+        title,
+        body,
+        data,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Push notification failed:', await response.text());
+      return;
+    }
+
+    console.log(`✅ Push notification sent to user with phone: ${phone}`);
+  } catch (error) {
+    console.error('Error sending push notification to user by phone:', error);
+  }
+}
+
+// Send push notification to user by ID
+export async function sendPushNotificationToUser(userId, title, body, data = {}) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      console.log(`User ${userId} not found`);
+      return;
+    }
+
+    const userData = userSnap.data();
+    const expoPushToken = userData?.expoPushToken;
+
+    if (!expoPushToken) {
+      console.log(`No push token for user ${userId}`);
+      return;
+    }
+
+    // Send push notification via Expo
+    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Accept-encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: expoPushToken,
+        sound: 'default',
+        title,
+        body,
+        data,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Push notification failed:', await response.text());
+      return;
+    }
+
+    console.log(`✅ Push notification sent to user ${userId}`);
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+  }
+}
+
 // ==================== APPOINTMENTS ====================
 
 export async function getBookedSlots(personnelId, date) {
@@ -235,6 +416,43 @@ export async function createAppointment(data) {
     status: 'confirmed',
     createdAt: serverTimestamp(),
   });
+
+  // Send push notification to employee
+  try {
+    const services = Array.isArray(data.services) ? data.services.join(', ') : (data.services || '');
+    const title = `🎯 Yeni Randevu`;
+    const body = `${data.userName} adlı müşteri ${data.date} tarihinde saat ${data.time}'de randevu aldı.\n📌 Hizmet: ${services}`;
+    
+    await sendPushNotificationToEmployee(data.personnelId, title, body, {
+      appointmentId: ref.id,
+      userId: data.userId,
+      userName: data.userName,
+      date: data.date,
+      time: data.time,
+    });
+  } catch (err) {
+    console.error('Push notification hatası:', err);
+    // Don't block appointment creation
+  }
+
+  // Send push notification to customer (by user ID)
+  try {
+    if (data.userId) {
+      const services = Array.isArray(data.services) ? data.services.join(', ') : (data.services || '');
+      const title = `✅ Randevu Onaylandı`;
+      const body = `${data.date} tarihinde saat ${data.time}'de randevunuz onaylanmıştır.\n👤 Personel: ${data.personnelName || 'TASARIMHANE'}\n📌 Hizmet: ${services}`;
+      
+      await sendPushNotificationToUser(data.userId, title, body, {
+        appointmentId: ref.id,
+        date: data.date,
+        time: data.time,
+        personnelName: data.personnelName,
+      });
+    }
+  } catch (err) {
+    console.error('Customer push notification hatası:', err);
+    // Don't block appointment creation
+  }
 
   // Create WhatsApp reminder (1 hour before appointment)
   try {
