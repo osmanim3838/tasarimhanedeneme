@@ -189,7 +189,17 @@ export async function deletePersonnel(personnelId) {
 // ==================== ADMIN: APPOINTMENT MANAGEMENT ====================
 
 export async function updateAppointmentStatus(appointmentId, status) {
+  // Fetch appointment details for notification
   const appointmentRef = doc(db, 'appointments', appointmentId);
+  const appointmentSnap = await getDoc(appointmentRef);
+  
+  if (!appointmentSnap.exists()) {
+    throw new Error('Appointment not found');
+  }
+
+  const appointmentData = appointmentSnap.data();
+  
+  // Update appointment status
   await updateDoc(appointmentRef, { status, updatedAt: serverTimestamp() });
 
   // If cancelled, also cancel the pending reminder
@@ -208,8 +218,50 @@ export async function updateAppointmentStatus(appointmentId, status) {
         });
       }
     } catch (err) {
-      console.error('Reminder iptal hatas\u0131:', err);
+      console.error('Reminder iptal hatası:', err);
     }
+  }
+
+  // Send notifications based on status change
+  try {
+    if (status === 'cancelled') {
+      // Notify customer about cancellation
+      if (appointmentData.userId) {
+        const title = '❌ Randevu İptal Edildi';
+        const body = `${appointmentData.date} tarihindeki ${appointmentData.time} saatindeki randevunuz iptal edilmiştir.`;
+        await sendPushNotificationToUser(appointmentData.userId, title, body, {
+          appointmentId,
+          date: appointmentData.date,
+          time: appointmentData.time,
+        });
+      }
+    } else if (status === 'completed') {
+      // Notify customer when service is completed
+      if (appointmentData.userId) {
+        const title = '✅ Hizmet Tamamlandı';
+        const body = `${appointmentData.personnelName} tarafından sunulan hizmetiniz tamamlanmıştır. Ziyaret ettiğiniz için teşekkürler!`;
+        await sendPushNotificationToUser(appointmentData.userId, title, body, {
+          appointmentId,
+          date: appointmentData.date,
+          time: appointmentData.time,
+        });
+      }
+    } else if (status === 'confirmed') {
+      // Notify customer when appointment is confirmed
+      if (appointmentData.userId) {
+        const services = Array.isArray(appointmentData.services) ? appointmentData.services.join(', ') : (appointmentData.services || '');
+        const title = '✅ Randevu Onaylandı';
+        const body = `${appointmentData.date} tarihinde saat ${appointmentData.time}'de randevunuz onaylanmıştır.\n👤 Personel: ${appointmentData.personnelName || 'TASARIMHANE'}\n📌 Hizmet: ${services}`;
+        await sendPushNotificationToUser(appointmentData.userId, title, body, {
+          appointmentId,
+          date: appointmentData.date,
+          time: appointmentData.time,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Notification error:', err);
+    // Don't block status update if notification fails
   }
 }
 
