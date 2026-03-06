@@ -49,7 +49,7 @@ function MainTabs() {
 export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
   const [initialParams, setInitialParams] = useState({});
-  const { setUser } = useUser();
+  const { setUser, setEmployee } = useUser();
 
   useEffect(() => {
     (async () => {
@@ -63,6 +63,7 @@ export default function AppNavigator() {
             setInitialRoute('OwnerDashboard');
             setInitialParams({ salon: session.data });
           } else if (session.role === 'employee') {
+            setEmployee(session.data);
             setInitialRoute('EmployeeDashboard');
             setInitialParams({ employee: session.data });
           } else {

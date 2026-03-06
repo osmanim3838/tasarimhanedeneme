@@ -19,9 +19,11 @@ import { COLORS, SIZES } from '../constants/theme';
 import { saveSession } from '../services/sessionService';
 import auth from '@react-native-firebase/auth';
 import { salonPhoneConfirmation } from './SalonLoginScreen';
+import { useUser } from '../context/UserContext';
 
 export default function SalonVerificationScreen({ route, navigation }) {
   const { phone, role, data } = route.params;
+  const { setEmployee } = useUser();
   const insets = useSafeAreaInsets();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -94,6 +96,8 @@ export default function SalonVerificationScreen({ route, navigation }) {
         navigation.replace('OwnerDashboard', { salon: data });
       } else {
         await saveSession('employee', data);
+        // Set employee in context so PushNotificationManager registers the token
+        if (setEmployee) setEmployee(data);
         navigation.replace('EmployeeDashboard', { employee: data });
       }
     } catch (error) {

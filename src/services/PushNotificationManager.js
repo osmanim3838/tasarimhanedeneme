@@ -32,7 +32,7 @@ export default function PushNotificationManager() {
         // Get the device's push token
         const token = (
           await Notifications.getExpoPushTokenAsync({
-            projectId: '541303114598', // From google-services.json messagingSenderId
+            projectId: 'cc7033c9-c811-4219-8a58-398a50b7a863', // EAS Project ID from app.json
           })
         ).data;
 
