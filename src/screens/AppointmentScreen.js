@@ -48,6 +48,17 @@ const DAY_OFF_MAP = {
   'Pazar': 0,
 };
 
+// Map JS getDay() (0=Sun..6=Sat) to Firestore shiftEndTimes keys
+const DAY_INDEX_TO_KEY = {
+  0: 'sunday',
+  1: 'monday',
+  2: 'tuesday',
+  3: 'wednesday',
+  4: 'thursday',
+  5: 'friday',
+  6: 'saturday',
+};
+
 // ── Service catalog (name → { duration, price }) ──
 const SERVICE_CATALOG = {
   'Saç Kesimi':          { duration: 30, price: 450 },
@@ -154,7 +165,7 @@ export default function AppointmentScreen({ navigation }) {
   const [bookedSlots, setBookedSlots] = useState([]);
 
   const calendarDays = getCalendarDays(calYear, calMonth);
-  const timeSlots = generateTimeSlots();
+  const timeSlots = generateTimeSlots('10:00', '23:30', 30);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -580,7 +591,29 @@ export default function AppointmentScreen({ navigation }) {
             const isToday = selectedDate.getDate() === now.getDate() &&
               selectedDate.getMonth() === now.getMonth() &&
               selectedDate.getFullYear() === now.getFullYear();
-            return timeSlots.map((slot) => {
+
+            // --- Daily Shift Start & End Time filtering ---
+            const selectedDayKey = DAY_INDEX_TO_KEY[selectedDate.getDay()];
+            const shiftStartStr = selectedPerson?.shiftStartTimes?.[selectedDayKey] || null;
+            const shiftStartMinutes = shiftStartStr
+              ? (() => { const [h, m] = shiftStartStr.split(':').map(Number); return h * 60 + m; })()
+              : null;
+            const shiftEndStr = selectedPerson?.shiftEndTimes?.[selectedDayKey] || null;
+            const shiftEndMinutes = shiftEndStr
+              ? (() => { const [h, m] = shiftEndStr.split(':').map(Number); const mins = h * 60 + m; return mins === 0 ? 1440 : mins; })()
+              : null;
+
+            return timeSlots
+              .filter((slot) => {
+                const [sH, sM] = slot.split(':').map(Number);
+                const slotMins = sH * 60 + sM;
+                // Exclude slots before shift start time
+                if (shiftStartMinutes !== null && slotMins < shiftStartMinutes) return false;
+                // Strict Rule: exclude slots where start time >= shift end time
+                if (shiftEndMinutes !== null && slotMins >= shiftEndMinutes) return false;
+                return true;
+              })
+              .map((slot) => {
               const isSelected = selectedTime === slot;
               const [slotH, slotM] = slot.split(':').map(Number);
               const slotMinutes = slotH * 60 + slotM;

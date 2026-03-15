@@ -115,13 +115,38 @@ export default function PersonnelDetailScreen({ route, navigation }) {
             <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Çalışma Saatleri</Text>
           </View>
           <View style={[styles.hoursContainer, { backgroundColor: colors.background }]}>
+            {(() => {
+              const days = [
+                { key: 'monday', label: 'Pazartesi' },
+                { key: 'tuesday', label: 'Salı' },
+                { key: 'wednesday', label: 'Çarşamba' },
+                { key: 'thursday', label: 'Perşembe' },
+                { key: 'friday', label: 'Cuma' },
+                { key: 'saturday', label: 'Cumartesi' },
+                { key: 'sunday', label: 'Pazar' },
+              ];
+              const groups = [];
+              days.forEach((day) => {
+                const hours = `${(person.shiftStartTimes?.[day.key]) || '10:00'} - ${(person.shiftEndTimes?.[day.key]) || '19:00'}`;
+                const last = groups[groups.length - 1];
+                if (last && last.hours === hours) {
+                  last.endLabel = day.label;
+                } else {
+                  groups.push({ startLabel: day.label, endLabel: null, hours });
+                }
+              });
+              return groups.map((group, index) => (
+                <View key={index} style={styles.hourInfoRow}>
+                  <Text style={[styles.hourLabel, { color: colors.textSecondary }]}>
+                    {group.endLabel ? `${group.startLabel} - ${group.endLabel}` : group.startLabel}
+                  </Text>
+                  <Text style={styles.hourValue}>{group.hours}</Text>
+                </View>
+              ));
+            })()}
             <View style={styles.hourInfoRow}>
-              <Text style={[styles.hourLabel, { color: colors.textSecondary }]}>Çalışma Saatleri:</Text>
-              <Text style={styles.hourValue}>{person.workingHours}</Text>
-            </View>
-            <View style={styles.hourInfoRow}>
-              <Text style={styles.hourLabel}>Personel Tatil Günü:</Text>
-              <Text style={[styles.hourValue, { color: COLORS.warning }]}>{person.dayOff}</Text>
+              <Text style={[styles.hourLabel, { color: colors.textSecondary }]}>Personel Tatil Günü:</Text>
+              <Text style={[styles.hourValue, { color: COLORS.warning }]}>{person.dayOff || 'Yok'}</Text>
             </View>
           </View>
         </View>

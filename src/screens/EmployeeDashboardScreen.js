@@ -415,9 +415,16 @@ export default function EmployeeDashboardScreen({ route, navigation }) {
                     onServicesChange={() => {}} // Read-only, no changes allowed
                     readonly={true}
                   />
-                  <InfoRow label="Çalışma Saatleri" value={employee.workingHours || 'Belirtilmemiş'} />
-                  <InfoRow label="İzin Günü" value={employee.dayOff || 'Belirtilmemiş'} />
-                  <InfoRow label="Hakkında" value={employee.about || 'Belirtilmemiş'} last />
+                  <InfoRow label="Çalışma Saatleri" value={
+                    employee.shiftStartTimes && employee.shiftEndTimes
+                      ? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                          .map((d) => {
+                            const labels = { monday: 'Pzt', tuesday: 'Sal', wednesday: 'Çar', thursday: 'Per', friday: 'Cum', saturday: 'Cmt', sunday: 'Paz' };
+                            return `${labels[d]}: ${employee.shiftStartTimes[d] || '10:00'}-${employee.shiftEndTimes[d] || '19:00'}`;
+                          }).join('\n')
+                      : (employee.workingHours || 'Belirtilmemiş')
+                  } />
+                  <InfoRow label="İzin Günü" value={employee.dayOff || 'Belirtilmemiş'} last />
                 </View>
               </>
             )}

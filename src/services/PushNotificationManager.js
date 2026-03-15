@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { useUser } from '../context/UserContext';
 import { registerPushTokenForUser, registerPushTokenForEmployee } from './firebaseService';
 
@@ -23,17 +25,41 @@ export default function PushNotificationManager() {
         shouldSetBadge: true,
       }),
     });
+
+    // Create default notification channel for Android
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'Varsayılan',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+        sound: 'default',
+      });
+    }
   }, []);
 
   // Register token for user or employee
   useEffect(() => {
     const registerPushNotifications = async () => {
       try {
+        // Request permissions first
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') {
+          console.log('⚠️ Push notification permission not granted');
+          return;
+        }
+
+        // Get projectId from app config
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? 'cc7033c9-c811-4219-8a58-398a50b7a863';
+        
         // Get the device's push token
         const token = (
-          await Notifications.getExpoPushTokenAsync({
-            projectId: 'cc7033c9-c811-4219-8a58-398a50b7a863', // EAS Project ID from app.json
-          })
+          await Notifications.getExpoPushTokenAsync({ projectId })
         ).data;
 
         console.log('📲 Expo Push Token:', token);

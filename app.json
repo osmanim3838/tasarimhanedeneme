@@ -58,6 +58,13 @@
                 ]
               }
             }
+          ],
+          [
+            "expo-notifications",
+            {
+              "icon": "./assets/icon.png",
+              "color": "#0F0F0F"
+            }
           ]
         ],    "extra": {
       "eas": {

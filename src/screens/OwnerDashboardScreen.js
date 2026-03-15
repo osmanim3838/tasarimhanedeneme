@@ -76,14 +76,27 @@ export default function OwnerDashboardScreen({ route, navigation }) {
   const [pPhone, setPPhone] = useState('');
   const [pRole, setPRole] = useState('');
   const [servicesList, setServicesList] = useState([]);
-  const [pWorkingHours, setPWorkingHours] = useState('');
   const [pDayOff, setPDayOff] = useState('');
-  const [pAbout, setPAbout] = useState('');
   const [pLunchStart, setPLunchStart] = useState('');
   const [pLunchEnd, setPLunchEnd] = useState('');
   const [lunchStartPickerVisible, setLunchStartPickerVisible] = useState(false);
   const [lunchEndPickerVisible, setLunchEndPickerVisible] = useState(false);
   const [pImage, setPImage] = useState(null);
+
+  // Günlük Çalışma Saatleri (Daily Working Hours)
+  const SHIFT_DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const SHIFT_DAY_LABELS = { monday: 'Pazartesi', tuesday: 'Salı', wednesday: 'Çarşamba', thursday: 'Perşembe', friday: 'Cuma', saturday: 'Cumartesi', sunday: 'Pazar' };
+  const DEFAULT_SHIFT_START = '10:00';
+  const DEFAULT_SHIFT_END = '19:00';
+  const [pShiftStartTimes, setPShiftStartTimes] = useState(
+    SHIFT_DAY_KEYS.reduce((acc, day) => ({ ...acc, [day]: DEFAULT_SHIFT_START }), {})
+  );
+  const [pShiftEndTimes, setPShiftEndTimes] = useState(
+    SHIFT_DAY_KEYS.reduce((acc, day) => ({ ...acc, [day]: DEFAULT_SHIFT_END }), {})
+  );
+  const [shiftPickerVisible, setShiftPickerVisible] = useState(false);
+  const [shiftPickerDay, setShiftPickerDay] = useState(null);
+  const [shiftPickerType, setShiftPickerType] = useState('start'); // 'start' or 'end'
   const [ownerImage, setOwnerImage] = useState(salon.ownerImage || null);
   const [salonLogo, setSalonLogo] = useState(salon.logo || null);
 
@@ -217,6 +230,18 @@ export default function OwnerDashboardScreen({ route, navigation }) {
     return times;
   };
 
+  // Shift end time options: 12:00 → 00:00 (midnight)
+  const generateShiftEndTimeOptions = () => {
+    const times = [];
+    for (let hour = 12; hour <= 23; hour++) {
+      for (let min = 0; min < 60; min += 30) {
+        times.push(`${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
+      }
+    }
+    times.push('00:00');
+    return times;
+  };
+
   // ===== SALON EDIT =====
   const openSalonEdit = () => {
     setEditName(salon.name || '');
@@ -258,12 +283,19 @@ export default function OwnerDashboardScreen({ route, navigation }) {
         return { ...service, id: service.id || `service-${Date.now()}-${Math.random()}` };
       });
       setServicesList(services);
-      setPWorkingHours(person.workingHours || '');
       setPDayOff(person.dayOff || '');
-      setPAbout(person.about || '');
       setPLunchStart(person.lunchBreak?.start || '');
       setPLunchEnd(person.lunchBreak?.end || '');
       setPImage(null);
+      // Load existing shift times or use defaults
+      const existingStart = person.shiftStartTimes || {};
+      const existingEnd = person.shiftEndTimes || {};
+      setPShiftStartTimes(
+        SHIFT_DAY_KEYS.reduce((acc, day) => ({ ...acc, [day]: existingStart[day] || DEFAULT_SHIFT_START }), {})
+      );
+      setPShiftEndTimes(
+        SHIFT_DAY_KEYS.reduce((acc, day) => ({ ...acc, [day]: existingEnd[day] || DEFAULT_SHIFT_END }), {})
+      );
     } else {
       setEditingPerson(null);
       setPName('');
@@ -271,12 +303,16 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       setPPhone('');
       setPRole('');
       setServicesList([]);
-      setPWorkingHours('');
       setPDayOff('');
-      setPAbout('');
       setPLunchStart('');
       setPLunchEnd('');
       setPImage(null);
+      setPShiftStartTimes(
+        SHIFT_DAY_KEYS.reduce((acc, day) => ({ ...acc, [day]: DEFAULT_SHIFT_START }), {})
+      );
+      setPShiftEndTimes(
+        SHIFT_DAY_KEYS.reduce((acc, day) => ({ ...acc, [day]: DEFAULT_SHIFT_END }), {})
+      );
     }
     setPersonnelModal(true);
   };
@@ -292,13 +328,13 @@ export default function OwnerDashboardScreen({ route, navigation }) {
       phone: pPhone.trim(),
       role: pRole.trim(),
       services: servicesList,
-      workingHours: pWorkingHours.trim(),
       dayOff: pDayOff.trim(),
-      about: pAbout.trim(),
       lunchBreak: {
         start: pLunchStart || null,
         end: pLunchEnd || null,
       },
+      shiftStartTimes: pShiftStartTimes,
+      shiftEndTimes: pShiftEndTimes,
       salonId: salon.id,
     };
 
@@ -515,8 +551,6 @@ export default function OwnerDashboardScreen({ route, navigation }) {
                 readonly={false}
               />
 
-              <Text style={styles.fieldLabel}>Çalışma Saatleri</Text>
-              <TextInput style={styles.modalInput} value={pWorkingHours} onChangeText={setPWorkingHours} placeholder="10:00 - 22:00" />
               <Text style={styles.fieldLabel}>İzin Günü</Text>
               <TouchableOpacity
                 style={styles.modalInput}
@@ -678,8 +712,95 @@ export default function OwnerDashboardScreen({ route, navigation }) {
                 </TouchableOpacity>
               </Modal>
 
-              <Text style={styles.fieldLabel}>Hakkında</Text>
-              <TextInput style={[styles.modalInput, { height: 80 }]} value={pAbout} onChangeText={setPAbout} multiline textAlignVertical="top" />
+              {/* ===== Günlük Çalışma Saatleri (Daily Working Hours) ===== */}
+              <Text style={[styles.fieldLabel, { marginTop: 12, fontSize: 15, fontWeight: '700', color: COLORS.primary }]}>
+                Günlük Çalışma Saatleri
+              </Text>
+              <Text style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
+                Her gün için personelin giriş ve çıkış saatini belirleyin.
+              </Text>
+              {SHIFT_DAY_KEYS.map((dayKey) => (
+                <View key={dayKey} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={{ width: 90, fontSize: 14, color: COLORS.textPrimary, fontWeight: '500' }}>
+                    {SHIFT_DAY_LABELS[dayKey]}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.modalInput, { flex: 0, width: 70, marginBottom: 0, paddingVertical: 8, alignItems: 'center', marginRight: 4 }]}
+                    onPress={() => { setShiftPickerDay(dayKey); setShiftPickerType('start'); setShiftPickerVisible(true); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 14, color: COLORS.primary, fontWeight: '600' }}>
+                      {pShiftStartTimes[dayKey] || DEFAULT_SHIFT_START}
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 14, color: COLORS.textMuted, marginHorizontal: 2 }}>-</Text>
+                  <TouchableOpacity
+                    style={[styles.modalInput, { flex: 0, width: 70, marginBottom: 0, paddingVertical: 8, alignItems: 'center' }]}
+                    onPress={() => { setShiftPickerDay(dayKey); setShiftPickerType('end'); setShiftPickerVisible(true); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 14, color: COLORS.error || '#EF4444', fontWeight: '600' }}>
+                      {pShiftEndTimes[dayKey] || DEFAULT_SHIFT_END}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              {/* Shift Time Picker Modal (shared for start & end) */}
+              <Modal visible={shiftPickerVisible} transparent animationType="fade">
+                <TouchableOpacity
+                  style={styles.dayOffOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShiftPickerVisible(false)}
+                >
+                  <View style={styles.dayOffPickerContainer}>
+                    <Text style={styles.dayOffPickerTitle}>
+                      {shiftPickerDay
+                        ? `${SHIFT_DAY_LABELS[shiftPickerDay]} - ${shiftPickerType === 'start' ? 'Giriş Saati' : 'Çıkış Saati'}`
+                        : 'Saat Seçin'}
+                    </Text>
+                    <ScrollView style={{ maxHeight: 350 }}>
+                      {(shiftPickerType === 'start' ? generateTimePickerOptions() : generateShiftEndTimeOptions()).map((time) => {
+                        const currentValue = shiftPickerType === 'start'
+                          ? pShiftStartTimes[shiftPickerDay]
+                          : pShiftEndTimes[shiftPickerDay];
+                        const isSelected = currentValue === time;
+                        return (
+                          <TouchableOpacity
+                            key={time}
+                            style={[
+                              styles.dayOffOption,
+                              isSelected && styles.dayOffOptionSelected,
+                            ]}
+                            onPress={() => {
+                              if (shiftPickerDay) {
+                                if (shiftPickerType === 'start') {
+                                  setPShiftStartTimes((prev) => ({ ...prev, [shiftPickerDay]: time }));
+                                } else {
+                                  setPShiftEndTimes((prev) => ({ ...prev, [shiftPickerDay]: time }));
+                                }
+                              }
+                              setShiftPickerVisible(false);
+                            }}
+                          >
+                            <Text
+                              style={[
+                                styles.dayOffOptionText,
+                                isSelected && styles.dayOffOptionTextSelected,
+                              ]}
+                            >
+                              {time}
+                            </Text>
+                            {isSelected && (
+                              <Ionicons name="checkmark" size={20} color={COLORS.primary} />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                </TouchableOpacity>
+              </Modal>
             </ScrollView>
             <TouchableOpacity style={styles.saveButton} onPress={savePersonnel}>
               <Text style={styles.saveButtonText}>{editingPerson ? 'Güncelle' : 'Ekle'}</Text>

@@ -97,15 +97,30 @@ export default function ContactScreen() {
             <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Çalışma Saatleri</Text>
           </View>
           <View style={[styles.hoursContainer, { backgroundColor: colors.background }]}>
-            {(salon?.workingHours || []).map((item, index) => (
-              <View key={index} style={styles.hourRow}>
-                <View style={styles.hourDayContainer}>
-                  <View style={[styles.statusDot, item.isOpen ? styles.dotOpen : styles.dotClosed]} />
-                  <Text style={[styles.hourDay, { color: colors.textPrimary }]}>{item.day}</Text>
+            {(() => {
+              const items = salon?.workingHours || [];
+              const groups = [];
+              items.forEach((item) => {
+                const key = `${item.hours}_${item.isOpen}`;
+                const last = groups[groups.length - 1];
+                if (last && last.key === key) {
+                  last.endDay = item.day;
+                } else {
+                  groups.push({ startDay: item.day, endDay: null, hours: item.hours, isOpen: item.isOpen, key });
+                }
+              });
+              return groups.map((group, index) => (
+                <View key={index} style={styles.hourRow}>
+                  <View style={styles.hourDayContainer}>
+                    <View style={[styles.statusDot, group.isOpen ? styles.dotOpen : styles.dotClosed]} />
+                    <Text style={[styles.hourDay, { color: colors.textPrimary }]}>
+                      {group.endDay ? `${group.startDay} - ${group.endDay}` : group.startDay}
+                    </Text>
+                  </View>
+                  <Text style={[styles.hourTime, { color: colors.textSecondary }]}>{group.hours}</Text>
                 </View>
-                <Text style={[styles.hourTime, { color: colors.textSecondary }]}>{item.hours}</Text>
-              </View>
-            ))}
+              ));
+            })()}
           </View>
         </View>
 
